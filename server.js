@@ -11,19 +11,41 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const sessions = new Map();
 const sslSetting = process.env.PGSSL ?? process.env.DB_SSL;
-const postgresConfig = process.env.DATABASE_URL
-    ? {
-      connectionString: process.env.DATABASE_URL,
-      ssl: String(sslSetting).toLowerCase() === 'true' ? { rejectUnauthorized: false } : false
-    }
-    : {
+
+const hasExplicitDbConfig = [
+  'DB_HOST',
+  'DB_NAME',
+  'DB_USER',
+  'DB_PASSWORD'
+].every((key) => process.env[key] !== undefined && process.env[key] !== '');
+const postgresConfig = hasExplicitDbConfig
+  ? {
       host: process.env.DB_HOST || 'localhost',
       port: Number(process.env.DB_PORT || 5432),
       database: process.env.DB_NAME || 'sidovi',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || '',
-      ssl: String(sslSetting).toLowerCase() === 'true' ? { rejectUnauthorized: false } : false
-    };
+      ssl: String(sslSetting).toLowerCase() === 'true'
+        ? { rejectUnauthorized: false }
+        : false
+    }
+  : process.env.DATABASE_URL
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: String(sslSetting).toLowerCase() === 'true'
+          ? { rejectUnauthorized: false }
+          : false
+      }
+    : {
+        host: 'localhost',
+        port: 5432,
+        database: 'sidovi',
+        user: 'postgres',
+        password: '',
+        ssl: String(sslSetting).toLowerCase() === 'true'
+          ? { rejectUnauthorized: false }
+          : false
+      };
 const db = new Pool(postgresConfig);
 
 app.use(cors());

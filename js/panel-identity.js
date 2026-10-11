@@ -21,7 +21,11 @@
         const foto = u.foto_perfil?.startsWith('data:image')
             ? `<img src="${u.foto_perfil}" alt="Foto de ${nombre}" class="panel-user-photo" />`
             : '';
-        el.innerHTML = `${foto}<span><strong>Bienvenido, ${nombre}</strong></span>`;
+        // Nota: aquí solo se actualiza el bloque de bienvenida (#panelIdentity).
+        // El título de la página (#panelTitle) NO se toca: debe conservar
+        // el nombre del panel ("Dashboard · Recursos Humanos"), no el
+        // nombre del usuario logueado.
+        el.innerHTML = `${foto}<span><strong>Hola, ${u.nombre_completo || ''}. ¡Qué bueno tenerte de vuelta!</strong></span>`;
     } catch (e) {
         el.innerHTML = '<span><strong>Bienvenido</strong></span>';
     } finally {

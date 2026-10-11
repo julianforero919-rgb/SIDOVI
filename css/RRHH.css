@@ -318,7 +318,7 @@ input[type="file"] {padding: 0.5rem; font-size: 0.86rem; cursor: pointer;}
 .data-table-wrap h2 {font-size: 1.05rem; color: var(--azul-oscuro); padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--gris-borde); font-family: var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem;}
 .data-table-wrap h2::before {content: ''; display: inline-block; width: 3px; height: 18px; background: var(--rojo); border-radius: 2px;}
 table {width: 100%; border-collapse: collapse; font-size: 0.9rem;}
-thead th {background: var(--azul-oscuro); color: var(--blanco-80); font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.85rem 1rem; text-align: left;}
+.data-table-wrap thead th {background: #0c396c; color: var(--blanco-80); font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.85rem 1rem; text-align: left;}
 thead th:first-child {border-left: 3px solid var(--rojo);}
 tbody tr {border-bottom: 1px solid var(--gris-borde); transition: background var(--transition);}
 tbody tr:last-child {border-bottom: none;}

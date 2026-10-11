@@ -32,17 +32,18 @@ loginButton.addEventListener('click', async () => {
     if (!response.ok) throw new Error(data.error || 'No fue posible iniciar sesión.');
     sessionStorage.setItem('sidoviRol', data.usuario.rol);
     sessionStorage.setItem('sidoviUsuario', JSON.stringify(data.usuario));
-    loginForm.hidden = true;
-    const welcomeEl = document.getElementById('welcomeMsg');
-    if (welcomeEl) {
-      welcomeEl.textContent = `Bienvenido, ${data.usuario.nombre_completo}. Redirigiendo...`;
-    }
-    const welcomeProfile = document.getElementById('welcomeProfile');
-    if (welcomeProfile) {
-      welcomeProfile.innerHTML = '';
-    }
-    document.body.classList.add('login-complete');
-    document.getElementById('loginSuccess').hidden = false;
+    
+ loginForm.hidden = true;
+
+ const loginSuccess = document.getElementById('loginSuccess');
+ const welcomeMsg = loginSuccess.querySelector('h2');
+
+ if (welcomeMsg) {
+   welcomeMsg.textContent = `Hola, ${data.usuario.nombre_completo}. ¡Qué bueno tenerte de vuelta!`;
+}
+
+loginSuccess.hidden = false;
+
     setTimeout(() => { window.location.href = data.usuario.rol === 'RRHH' ? 'RRHH.html' : 'gerente.html'; }, 700);
   } catch (error) {
     alertBox.textContent = error.message;

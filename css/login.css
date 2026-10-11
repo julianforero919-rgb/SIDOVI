@@ -273,7 +273,7 @@ input[type="file"] {padding: 0.5rem; font-size: 0.86rem; cursor: pointer;}
 .login-denied, .login-success {text-align: center; padding: 1rem 0;}
 .denied-icon, .success-icon {font-size: 3rem; margin-bottom: 1rem;}
 .login-denied h2  {color: var(--rojo); margin-bottom: 0.75rem;}
-.login-success h2 {color: #15803d; margin-bottom: 0.75rem;}
+.login-success h2 {color: var(--azul-oscuro); margin-bottom: 0.75rem;}
 .login-denied p, .login-success p {color: var(--gris-texto); font-size: 0.94rem; margin-bottom: 1.5rem;}
 .login-denied .btn-outline {border-color: var(--azul-claro); color: var(--azul-claro);}
 .login-page.login-complete main.login-main {min-height: calc(100vh - 78px - 76px); padding: 1.5rem;}
