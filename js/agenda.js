@@ -3,6 +3,7 @@ const API = '/api';
 let candidatos = [];
 let entrevistas = [];
 let editandoId = null;
+let diaSeleccionado = null; // 'YYYY-MM-DD' o null
 
 document.getElementById('menuToggle')?.addEventListener('click', () => {
     document.querySelector('.nav-list')?.classList.toggle('open');
@@ -90,53 +91,50 @@ async function loadCandidates() {
 
 
 /* =========================================================
-   CARGAR ENTREVISTAS
+   LISTA DE ENTREVISTAS (con filtro opcional por día)
 ========================================================= */
 
-async function loadInterviews() {
+function renderEventList() {
     const list = document.getElementById('eventList');
+    const title = document.getElementById('eventsTitle');
+    const btnTodas = document.getElementById('btnVerTodas');
 
-    try {
-        const r = await fetch(`${API}/entrevistas`);
-        const d = await r.json();
+    if (!list) return;
 
-        if (!r.ok) {
-            throw new Error(
-                d.error || 'No se pudieron consultar entrevistas.'
-            );
-        }
+    const visibles = diaSeleccionado
+        ? entrevistas.filter(
+            i => String(i.fecha_entrevista).slice(0, 10) === diaSeleccionado
+        )
+        : entrevistas;
 
-        entrevistas = d.sort(
-            (a, b) =>
-                fechaHora(
-                    a.fecha_entrevista,
-                    a.hora_entrevista
-                ) -
-                fechaHora(
-                    b.fecha_entrevista,
-                    b.hora_entrevista
-                )
-        );
+    if (title) {
+        title.textContent = diaSeleccionado
+            ? `Entrevistas del ${formatFecha(diaSeleccionado)}`
+            : 'Próximas Entrevistas';
+    }
 
-        list.innerHTML = entrevistas.length
-            ? ''
-            : `
+    if (btnTodas) btnTodas.hidden = !diaSeleccionado;
+
+    list.innerHTML = visibles.length
+        ? ''
+        : `
         <div class="event-item">
           <div class="event-desc">
-            No hay entrevistas programadas.
+            ${diaSeleccionado
+            ? 'No hay entrevistas programadas para este día.'
+            : 'No hay entrevistas programadas.'}
           </div>
         </div>
       `;
 
-        entrevistas.forEach(i => {
-            const item = document.createElement('div');
+    visibles.forEach(i => {
+        const item = document.createElement('div');
 
-            item.className = 'event-item';
+        item.className = 'event-item';
 
-            const estado =
-                i.resultado || 'PROGRAMADA';
+        const estado = i.resultado || 'PROGRAMADA';
 
-            item.innerHTML = `
+        item.innerHTML = `
         <div class="event-time">
           ${esc(formatFecha(i.fecha_entrevista))}
           ·
@@ -166,18 +164,48 @@ async function loadInterviews() {
         </div>
       `;
 
-            list.appendChild(item);
-        });
+        list.appendChild(item);
+    });
 
-        document
-            .querySelectorAll('[data-reprogramar]')
-            .forEach(b => {
-                b.addEventListener('click', () =>
-                    prepararReprogramacion(
-                        b.dataset.reprogramar
-                    )
-                );
-            });
+    list.querySelectorAll('[data-reprogramar]').forEach(b => {
+        b.addEventListener('click', () =>
+            prepararReprogramacion(b.dataset.reprogramar)
+        );
+    });
+}
+
+
+/* =========================================================
+   CARGAR ENTREVISTAS
+========================================================= */
+
+async function loadInterviews() {
+    const list = document.getElementById('eventList');
+
+    try {
+        const r = await fetch(`${API}/entrevistas`);
+        const d = await r.json();
+
+        if (!r.ok) {
+            throw new Error(
+                d.error || 'No se pudieron consultar entrevistas.'
+            );
+        }
+
+        entrevistas = d.sort(
+            (a, b) =>
+                fechaHora(
+                    a.fecha_entrevista,
+                    a.hora_entrevista
+                ) -
+                fechaHora(
+                    b.fecha_entrevista,
+                    b.hora_entrevista
+                )
+        );
+
+        renderEventList();
+        renderCalendar();
 
     } catch (e) {
         showAlert(e.message);
@@ -611,8 +639,160 @@ document
 
 
 /* =========================================================
+   CALENDARIO
+========================================================= */
+
+const MESES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+const hoy = new Date();
+let calAnio = hoy.getFullYear();
+let calMes = hoy.getMonth();
+
+const pad2 = n => String(n).padStart(2, '0');
+const claveFecha = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
+
+function initCalendar() {
+    const selMes = document.getElementById('calMes');
+    const selAnio = document.getElementById('calAnio');
+
+    if (!selMes || !selAnio) return;
+
+    MESES.forEach((nombre, i) => selMes.add(new Option(nombre, i)));
+
+    for (let y = hoy.getFullYear() - 2; y <= hoy.getFullYear() + 3; y++) {
+        selAnio.add(new Option(y, y));
+    }
+
+    selMes.addEventListener('change', () => {
+        calMes = Number(selMes.value);
+        renderCalendar();
+    });
+
+    selAnio.addEventListener('change', () => {
+        calAnio = Number(selAnio.value);
+        renderCalendar();
+    });
+
+    document.getElementById('calPrev').addEventListener('click', () => {
+        calMes--;
+        if (calMes < 0) { calMes = 11; calAnio--; }
+        renderCalendar();
+    });
+
+    document.getElementById('calNext').addEventListener('click', () => {
+        calMes++;
+        if (calMes > 11) { calMes = 0; calAnio++; }
+        renderCalendar();
+    });
+
+    document.getElementById('calHoy').addEventListener('click', () => {
+        calAnio = hoy.getFullYear();
+        calMes = hoy.getMonth();
+        diaSeleccionado = null;
+        renderCalendar();
+        renderEventList();
+    });
+
+    document.getElementById('btnVerTodas')?.addEventListener('click', () => {
+        diaSeleccionado = null;
+        renderCalendar();
+        renderEventList();
+    });
+
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const cont = document.getElementById('calDays');
+    const selMes = document.getElementById('calMes');
+    const selAnio = document.getElementById('calAnio');
+
+    if (!cont || !selMes || !selAnio) return;
+
+    // Si el año navegado no está en la lista, lo agregamos
+    if (![...selAnio.options].some(o => Number(o.value) === calAnio)) {
+        selAnio.add(new Option(calAnio, calAnio));
+        [...selAnio.options]
+            .sort((a, b) => a.value - b.value)
+            .forEach(o => selAnio.add(o));
+    }
+
+    selMes.value = String(calMes);
+    selAnio.value = String(calAnio);
+
+    // Conteo de entrevistas por día
+    const porDia = {};
+    entrevistas.forEach(i => {
+        const k = String(i.fecha_entrevista).slice(0, 10);
+        porDia[k] = (porDia[k] || 0) + 1;
+    });
+
+    const primerDia = new Date(calAnio, calMes, 1).getDay(); // 0 = domingo
+    const diasMes = new Date(calAnio, calMes + 1, 0).getDate();
+    const claveHoy = claveFecha(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+    let html = '';
+    let totalMes = 0;
+
+    for (let i = 0; i < primerDia; i++) {
+        html += '<div class="cal-day empty"></div>';
+    }
+
+    for (let d = 1; d <= diasMes; d++) {
+        const k = claveFecha(calAnio, calMes, d);
+        const n = porDia[k] || 0;
+        totalMes += n;
+
+        const clases = ['cal-day'];
+        if (n) clases.push('has-event');
+        if (k === claveHoy) clases.push('today');
+        if (k === diaSeleccionado) clases.push('selected');
+
+        const titulo = n
+            ? `${d} de ${MESES[calMes]}: ${n} entrevista${n > 1 ? 's' : ''}`
+            : `${d} de ${MESES[calMes]}`;
+
+        html += `<button type="button" class="${clases.join(' ')}" data-fecha="${k}" title="${titulo}" aria-label="${titulo}">${d}</button>`;
+    }
+
+    cont.innerHTML = html;
+
+    cont.querySelectorAll('.cal-day[data-fecha]').forEach(b => {
+        b.addEventListener('click', () => {
+            const k = b.dataset.fecha;
+
+            // Clic de nuevo en el mismo día = quitar filtro
+            diaSeleccionado = diaSeleccionado === k ? null : k;
+
+            // Facilita agendar: pasa la fecha al formulario
+            const inputFecha = document.getElementById('ag-fecha');
+            if (inputFecha && diaSeleccionado) inputFecha.value = diaSeleccionado;
+
+            renderCalendar();
+            renderEventList();
+        });
+    });
+
+    const resumen = document.getElementById('calResumen');
+    if (resumen) {
+        resumen.textContent = totalMes
+            ? `${totalMes} entrevista${totalMes > 1 ? 's' : ''} en ${MESES[calMes].toLowerCase()}`
+            : `Sin entrevistas en ${MESES[calMes].toLowerCase()}`;
+    }
+
+    document
+        .getElementById('calendar')
+        ?.setAttribute('aria-label', `Calendario de ${MESES[calMes]} ${calAnio}`);
+}
+
+
+/* =========================================================
    INICIALIZAR
 ========================================================= */
 
+initCalendar();
 loadCandidates();
 loadInterviews();

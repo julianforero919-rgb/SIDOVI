@@ -4,10 +4,10 @@
   body .sidebar[aria-label="Menú de gerencia"] .sidebar-link.active {
 
     animation:
-      sidovi-manager-active-enter
-      450ms
-      cubic-bezier(0.25, 0.8, 0.25, 1)
-      both;
+            sidovi-manager-active-enter
+            450ms
+            cubic-bezier(0.25, 0.8, 0.25, 1)
+            both;
 
   }
 
@@ -131,28 +131,28 @@ img[src$="logo_sidovi.png"] {
 .panel-identity {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.9rem;
-  min-height: 112px;
-  width: min(100%, 820px);
-  margin: 1.25rem auto 0;
-  padding: 1rem 1.5rem;
+  min-height: 0;
+  width: 100%;
+  margin: 0 0 1.25rem;
+  padding: 0.8rem 1.25rem;
   border: 1px solid rgba(44, 79, 148, 0.12);
-  border-left: 5px solid #c8192b;
+  border-left: 4px solid #c8192b;
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
-  text-align: center;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  text-align: left;
 }
 
 .panel-identity .panel-user-photo {
-  width: 96px;
-  height: 96px;
+  width: 72px;
+  height: 72px;
   object-fit: cover;
-  object-position: center;
+  object-position: center top;
   border-radius: 50%;
-  border: 3px solid rgba(44, 79, 148, 0.12);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
   display: block;
   flex-shrink: 0;
 }
@@ -160,25 +160,25 @@ img[src$="logo_sidovi.png"] {
 .panel-identity span {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  font-size: 1.2rem;
+  align-items: flex-start;
+  font-size: 1rem;
 }
 
 .panel-identity strong {
-  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 @media (max-width: 600px) {
   .panel-identity {
-    min-height: 96px;
-    padding: 0.8rem;
+    padding: 0.6rem 0.8rem;
   }
 
   .panel-identity .panel-user-photo {
-    width: 72px;
-    height: 72px;
+    width: 56px;
+    height: 56px;
   }
-  justify-content: center;
 }
 
 body.panel-loading .panel-content {
@@ -197,4 +197,3 @@ body.panel-ready .panel-loader {
     transform: rotate(360deg);
   }
 }
-```

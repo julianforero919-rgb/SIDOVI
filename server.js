@@ -976,56 +976,68 @@ app.patch('/api/entrevistas/:id', async (req, res) => {
 
 
     /* =====================================================
-       OBTENER FECHA ACTUAL
-    ===================================================== */
+     OBTENER FECHA Y HORA ACTUALES
+  ===================================================== */
 
-    const fechaActual =
-        entrevistaActual.fecha_entrevista
-            ? new Date(
-                entrevistaActual.fecha_entrevista
-            )
-            : null;
+    const fechaGuardada = entrevistaActual.fecha_entrevista;
 
+    // PostgreSQL devuelve un timestamp sin zona horaria.
+    // Conservamos sus componentes locales para evitar desfases.
+    const fechaTexto = fechaGuardada
+        ? (
+            fechaGuardada instanceof Date
+                ? [
+                  fechaGuardada.getFullYear(),
+                  String(fechaGuardada.getMonth() + 1).padStart(2, '0'),
+                  String(fechaGuardada.getDate()).padStart(2, '0')
+                ].join('-')
+                : String(fechaGuardada).slice(0, 10)
+        )
+        : null;
+
+    const horaGuardada = fechaGuardada
+        ? (
+            fechaGuardada instanceof Date
+                ? [
+                  String(fechaGuardada.getHours()).padStart(2, '0'),
+                  String(fechaGuardada.getMinutes()).padStart(2, '0')
+                ].join(':')
+                : String(fechaGuardada).slice(11, 16)
+        )
+        : null;
 
     /* =====================================================
-       NUEVA FECHA
+       NUEVA FECHA Y HORA
     ===================================================== */
 
     const fechaNueva =
         fecha ||
         fechaEntrevista ||
-        (
-            fechaActual
-                ? fechaActual
-                    .toISOString()
-                    .slice(0, 10)
-                : null
-        );
-
-
-    /* =====================================================
-       NUEVA HORA
-    ===================================================== */
+        fechaTexto;
 
     const horaNueva =
         hora ||
         horaEntrevista ||
-        (
-            fechaActual
-                ? fechaActual
-                    .toTimeString()
-                    .slice(0, 5)
-                : '00:00'
-        );
-
+        horaGuardada ||
+        '09:00';
 
     if (!fechaNueva) {
       return res.status(400).json({
-        error:
-            'La fecha de la entrevista es obligatoria.'
+        error: 'La fecha de la entrevista es obligatoria.'
       });
     }
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaNueva))) {
+      return res.status(400).json({
+        error: 'La fecha debe tener el formato AAAA-MM-DD.'
+      });
+    }
+
+    if (!/^\d{2}:\d{2}$/.test(String(horaNueva))) {
+      return res.status(400).json({
+        error: 'La hora debe tener el formato HH:MM.'
+      });
+    }
 
     /* =====================================================
        UNIR FECHA + HORA
@@ -5688,8 +5700,11 @@ app.post('/api/auth/login', async (req, res) => {
       LIMIT 1`, [identificador]);
     if (!result.rowCount) return res.status(401).json({ error: 'Credenciales incorrectas.' });
     const usuario = result.rows[0];
-    const passwordValida = usuario.contrasena_hash === contrasena
-        || await bcrypt.compare(String(contrasena), String(usuario.contrasena_hash || '')).catch(() => false);
+
+    const passwordValida = await bcrypt
+        .compare(String(contrasena ?? ''), String(usuario.contrasena_hash || ''))
+        .catch(() => false);
+
     if (!passwordValida) return res.status(401).json({ error: 'Credenciales incorrectas.' });
     const rolTexto = String(usuario.rol || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const rolNormalizado = ['rrhh', 'rh', 'recursos humanos', 'recursos_humanos', 'recursos-humanos', 'administrador', 'admin'].includes(rolTexto)
@@ -5720,6 +5735,82 @@ app.patch('/api/auth/perfil', requireRoles('RRHH', 'Gerente'), async (req, res) 
     req.session.usuario = result.rows[0];
     res.json({ usuario: result.rows[0] });
   } catch (error) { errorResponse(res, error, 'No fue posible actualizar el perfil. Ejecuta primero la migraciÃ³n 005.'); }
+});
+
+app.post('/api/auth/cambiar-clave', requireRoles('RRHH', 'Gerente'), async (req, res) => {
+  const { claveActual, claveNueva } = req.body || {};
+
+  if (typeof claveActual !== 'string' || typeof claveNueva !== 'string') {
+    return res.status(400).json({
+      error: 'Debes ingresar la contraseña actual y la nueva.'
+    });
+  }
+
+  if (claveNueva.length < 12) {
+    return res.status(400).json({
+      error: 'La nueva contraseña debe tener al menos 12 caracteres.'
+    });
+  }
+
+  if (claveActual === claveNueva) {
+    return res.status(400).json({
+      error: 'La nueva contraseña debe ser diferente de la actual.'
+    });
+  }
+
+  try {
+    const consulta = await db.query(
+        `SELECT contrasena_hash
+       FROM usuario
+       WHERE id_usuario = $1 AND activo = true
+       LIMIT 1`,
+        [req.session.id_usuario]
+    );
+
+    if (!consulta.rowCount) {
+      return res.status(404).json({
+        error: 'Usuario no encontrado o inactivo.'
+      });
+    }
+
+    const hashActual = String(consulta.rows[0].contrasena_hash || '');
+
+    // Permite verificar tanto contraseñas heredadas como hashes bcrypt.
+    const actualValida =
+        hashActual === claveActual ||
+        await bcrypt.compare(claveActual, hashActual).catch(() => false);
+
+    if (!actualValida) {
+      return res.status(401).json({
+        error: 'La contraseña actual es incorrecta.'
+      });
+    }
+
+    const nuevoHash = await bcrypt.hash(claveNueva, 12);
+
+    const actualizacion = await db.query(
+        `UPDATE usuario
+       SET contrasena_hash = $1
+       WHERE id_usuario = $2 AND activo = true
+       RETURNING id_usuario`,
+        [nuevoHash, req.session.id_usuario]
+    );
+
+    if (!actualizacion.rowCount) {
+      return res.status(404).json({
+        error: 'No se pudo actualizar la contraseña del usuario.'
+      });
+    }
+
+    return res.json({
+      mensaje: 'Contraseña actualizada correctamente.'
+    });
+  } catch (error) {
+    console.error('Error al cambiar la contraseña:', error);
+    return res.status(500).json({
+      error: 'No fue posible cambiar la contraseña.'
+    });
+  }
 });
 
 app.post('/api/auth/logout', requireRoles('RRHH', 'Gerente'), (req, res) => {

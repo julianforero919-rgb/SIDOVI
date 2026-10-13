@@ -257,9 +257,9 @@ input[type="file"] {padding: 0.5rem; font-size: 0.86rem; cursor: pointer;}
 .site-footer {background: var(--azul-oscuro); border-top: 3px solid var(--rojo); padding: 1.75rem 1.75rem;}
 .footer-inner {max-width: 1120px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;}
 .footer-logo {height: 40px; width: auto;}
-.site-footer p {color: var(--blanco-50); font-size: 0.85rem;}
+.site-footer p {color: rgba(255,255,255,0.75); font-size: 0.85rem;}
 .footer-nav {display: flex; gap: 1.25rem; flex-wrap: wrap;}
-.footer-nav a {color: var(--blanco-50); font-size: 0.88rem; transition: color var(--transition);}
+.footer-nav a {color: rgba(255,255,255,0.75); font-size: 0.88rem; transition: color var(--transition);}
 .footer-nav a:hover {color: var(--blanco);}
 
 /* =============================================
@@ -503,11 +503,46 @@ tbody td {padding: 0.85rem 1rem; color: var(--texto); vertical-align: middle;}
 }
 
 /* ===== ESTILOS DE PERFILES ===== */
-.panel-identity{display:flex; align-items:center; gap:.75rem; color:var(--azul-oscuro);}.panel-identity img{width:72px; height:72px; border-radius:var(--radius-lg); object-fit:cover;}object-position:center top.panel-identity span{display:flex; flex-direction:column;}.panel-identity strong{font-family:var(--font-display); font-size:1.1rem;}.panel-identity small{color:var(--gris-texto);}.profile-card{background:#fff; border:1px solid var(--gris-borde); border-radius:var(--radius-lg); padding:1.5rem; box-shadow:var(--shadow-md);}.profile-head{display:flex; gap:1.25rem; align-items:center; margin-bottom:1.5rem;}.profile-photo,.table-avatar{width:92px; height:92px; object-fit:cover; border-radius:50%; border:3px solid var(--gris-borde);}.table-avatar{width:48px; height:48px; border-width:2px;}.profile-placeholder{display:inline-grid; place-items:center; background:var(--gris-bg); color:var(--gris-texto); font-size:.75rem;}.profile-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem;}.profile-grid div{padding:.75rem; background:var(--gris-bg); border-radius:var(--radius);}.profile-grid strong,.profile-grid span{display:block;}.profile-grid strong{font-size:.8rem; color:var(--gris-texto); text-transform:uppercase;}.document-list{display:flex; flex-wrap:wrap; gap:.5rem;}.document-chip{display:inline-block; padding:.35rem .6rem; border:1px solid var(--gris-borde); border-radius:999px;
+.profile-card{background:#fff; border:1px solid var(--gris-borde); border-radius:var(--radius-lg); padding:1.5rem; box-shadow:var(--shadow-md);}
+.profile-head{display:flex; gap:1.25rem; align-items:center; margin-bottom:1.5rem;}
+.profile-photo,.table-avatar{width:92px; height:92px; object-fit:cover; border-radius:50%; border:3px solid var(--gris-borde);}
+.table-avatar{width:48px; height:48px; border-width:2px;}
+.profile-placeholder{display:inline-grid; place-items:center; background:var(--gris-bg); color:var(--gris-texto); font-size:.75rem;}
+.profile-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem;}
+.profile-grid div{padding:.75rem; background:var(--gris-bg); border-radius:var(--radius);}
+.profile-grid strong,.profile-grid span{display:block;}
+.profile-grid strong{font-size:.8rem; color:var(--gris-texto); text-transform:uppercase;}
+.document-list{display:flex; flex-wrap:wrap; gap:.5rem;}
+.document-chip{display:inline-block; padding:.35rem .6rem; border:1px solid var(--gris-borde); border-radius:999px; background:#fff; font-size:.84rem;}
+.profile-card h3{margin:1rem 0 .75rem; color:var(--azul-oscuro);}
 
 /* ===== ESTILOS PROPIOS DE RRHH.HTML ===== */
 .sidovi-inline-1 {margin-top:1rem;}
 .sidovi-inline-2 {border-color:var(--azul-claro); color:var(--azul-claro);}
 .sidovi-inline-4 {font-weight:700; color:var(--azul-oscuro);}
 .sidovi-inline-5 {max-width:320px;}
-.sidovi-inline-6 {margin-top:1.5rem; display:flex; gap:1rem; flex-wrap:wrap;}
+
+/* Botones inferiores del dashboard */
+.sidovi-inline-6 {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.sidovi-inline-6 .btn-outline {
+  background: #fff;
+  color: #10193f;
+  border: 2px solid #10193f;
+}
+
+.sidovi-inline-6 .btn-outline:hover {
+  background: #10193f;
+  color: #fff;
+  border-color: #10193f;
+}
+
+/* Números de las métricas un poco más compactos */
+.stat-box .stat-num {font-size: 2.2rem;}
