@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import pg from "pg";
+import bcrypt from "bcryptjs";
 
 const { Pool } = pg;
 
@@ -11,7 +12,7 @@ const fakeRows = (sql: string) => {
     return [{ id_aspirante: 3, nombre_completo: "Juan Perez Garcia", total_postulaciones: 1 }];
   }
   if (sql.includes("FROM usuario")) {
-    return [{ id_usuario: 1, nombre_completo: "Ana Lopez", correo: "ana1@gmail.com", contrasena_hash: "123", rol: "RRHH", activo: true }];
+    return [{ id_usuario: 1, nombre_completo: "Ana Lopez", correo: "ana1@gmail.com", contrasena_hash: bcrypt.hashSync("123", 4), rol: "RRHH", activo: true }];
   }
   if (sql.includes("FROM postulacion p")) {
     return [{ id_postulacion: 1, id_vacante: 1, nombre_completo: "Juan Perez Garcia", nombre_cargo: "Guarda de Seguridad", estado: "EN_REVISION" }];
