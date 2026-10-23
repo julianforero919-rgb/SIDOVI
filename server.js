@@ -514,12 +514,13 @@ app.put(
 );
 
 app.post('/api/postulaciones', async (req, res) => {
-  const { idPostulante, idAspirante, nombre, nombreCompleto, apellido, cedula, numeroDocumento, email, correo, telefono, ciudad, direccion, cargo, idVacante, documentos = [] } = req.body;
+  const { idPostulante, idAspirante, nombre, nombreCompleto, apellido, cedula, numeroDocumento, email, correo, telefono, ciudad, direccion, sexo, cargo, idVacante, documentos = [] } = req.body;
   const client = await db.connect();
   try {
     await client.query('BEGIN');
     let id = Number(idPostulante || idAspirante);
-    if (!id) { const names = splitName(nombreCompleto || nombre); const user = await client.query('SELECT id_aspirante FROM aspirante WHERE correo = $1 OR numero_documento = $2 LIMIT 1', [email || correo, cedula || numeroDocumento]); if (user.rowCount) id = user.rows[0].id_aspirante; else { const created = await client.query('INSERT INTO aspirante (tipo_documento, numero_documento, nombre_completo, correo, telefono, direccion, fecha_registro, activo) VALUES ($1,$2,$3,$4,$5,$6,CURRENT_DATE,true) RETURNING id_aspirante', ['CC', cedula || numeroDocumento, `${names.nombre} ${apellido || names.apellido}`.trim(), email || correo, telefono, ciudad || direccion]); id = created.rows[0].id_aspirante; } }
+    if (!id) { const names = splitName(nombreCompleto || nombre); const user = await client.query('SELECT id_aspirante FROM aspirante WHERE correo = $1 OR numero_documento = $2 LIMIT 1', [email || correo, cedula || numeroDocumento]); if (user.rowCount) id = user.rows[0].id_aspirante; else { const created = await client.query('INSERT INTO aspirante (tipo_documento, numero_documento, nombre_completo, correo, telefono, direccion, sexo, fecha_registro, activo) VALUES ($1,$2,$3,$4,$5,$6,$7,CURRENT_DATE,true) RETURNING id_aspirante', ['CC', cedula || numeroDocumento, `${names.nombre} ${apellido || names.apellido}`.trim(), email || correo, telefono, ciudad || direccion, sexo]); id = created.rows[0].id_aspirante; } }
+    if (id && sexo) await client.query('UPDATE aspirante SET sexo = $1 WHERE id_aspirante = $2', [sexo, id]);
     let vacancyId = idVacante;
     if (!vacancyId && cargo) { const found = await client.query(`SELECT id_vacante FROM vacante WHERE LOWER(nombre_cargo) = LOWER($1) AND LOWER(estado) IN ('abierta','activo','activa') ORDER BY id_vacante DESC LIMIT 1`, [cargo]); if (!found.rowCount) throw Object.assign(new Error('No hay una vacante abierta para ese cargo.'), { status: 400 }); vacancyId = found.rows[0].id_vacante; }
     if (!id || !vacancyId) throw Object.assign(new Error('El aspirante y la vacante son obligatorios.'), { status: 400 });
@@ -5713,4 +5714,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-

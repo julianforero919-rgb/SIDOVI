@@ -72,6 +72,7 @@ CREATE TABLE aspirante (
     correo           varchar(120) NOT NULL,
     telefono         varchar(30)  NOT NULL DEFAULT '',
     direccion        varchar(160) NOT NULL DEFAULT '',
+    sexo             varchar(20),
     fecha_registro   date NOT NULL DEFAULT CURRENT_DATE,
     activo           boolean NOT NULL DEFAULT true,
     CONSTRAINT aspirante_documento_uk UNIQUE (tipo_documento, numero_documento)
