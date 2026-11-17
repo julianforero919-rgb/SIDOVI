@@ -944,6 +944,202 @@ postulacion?.addEventListener(
 
 
 // ============================================================
+// UTILIDADES DEL CONTRATO (texto del documento)
+// ============================================================
+
+const MESES_CONTRATO = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+// "UNO" antes de un sustantivo se apocopa: UN, VEINTIÚN
+function apocopar(texto) {
+    return texto
+        .replace(/VEINTIUNO$/, 'VEINTIÚN')
+        .replace(/(^| )UNO$/, '$1UN');
+}
+
+function numeroALetras(valor) {
+
+    const UNIDADES = [
+        'CERO', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE',
+        'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE',
+        'DIECIOCHO', 'DIECINUEVE', 'VEINTE', 'VEINTIUNO', 'VEINTIDÓS', 'VEINTITRÉS',
+        'VEINTICUATRO', 'VEINTICINCO', 'VEINTISÉIS', 'VEINTISIETE', 'VEINTIOCHO', 'VEINTINUEVE'
+    ];
+
+    const DECENAS = [
+        '', '', '', 'TREINTA', 'CUARENTA', 'CINCUENTA',
+        'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'
+    ];
+
+    const CENTENAS = [
+        '', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS',
+        'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'
+    ];
+
+    // Convierte de 0 a 999
+    function hasta999(n) {
+
+        if (n === 0) return '';
+        if (n === 100) return 'CIEN';
+
+        const c = Math.floor(n / 100);
+        const r = n % 100;
+        const partes = [];
+
+        if (c) partes.push(CENTENAS[c]);
+
+        if (r) {
+            if (r < 30) {
+                partes.push(UNIDADES[r]);
+            } else {
+                const d = Math.floor(r / 10);
+                const u = r % 10;
+                partes.push(u ? `${DECENAS[d]} Y ${UNIDADES[u]}` : DECENAS[d]);
+            }
+        }
+
+        return partes.join(' ');
+    }
+
+    const n = Math.floor(Number(valor) || 0);
+
+    if (n === 0) return 'CERO';
+
+    const millonesDeMillones = Math.floor(n / 1e12);
+    const millones = Math.floor((n % 1e12) / 1e6);
+    const miles = Math.floor((n % 1e6) / 1e3);
+    const resto = n % 1e3;
+
+    const partes = [];
+
+    if (millonesDeMillones) {
+        partes.push(
+            millonesDeMillones === 1
+                ? 'UN BILLÓN'
+                : `${apocopar(hasta999(millonesDeMillones))} BILLONES`
+        );
+    }
+
+    if (millones) {
+        partes.push(
+            millones === 1
+                ? 'UN MILLÓN'
+                : `${apocopar(hasta999(millones))} MILLONES`
+        );
+    }
+
+    if (miles) {
+        partes.push(
+            miles === 1
+                ? 'MIL'
+                : `${apocopar(hasta999(miles))} MIL`
+        );
+    }
+
+    if (resto) partes.push(hasta999(resto));
+
+    return partes.join(' ');
+}
+
+
+// "$1.423.500 COP" -> "UN MILLÓN ... PESOS ($1.423.500 COP)"
+function salarioEnLetras(valor) {
+
+    const numero = Math.floor(Number(valor) || 0);
+
+    const letras = apocopar(numeroALetras(numero));
+
+    // Millones exactos llevan "DE": DOS MILLONES DE PESOS
+    const moneda =
+        numero >= 1e6 && numero % 1e6 === 0
+            ? 'DE PESOS'
+            : 'PESOS';
+
+    return `${letras} ${moneda} ` +
+        `($${numero.toLocaleString('es-CO')} COP)`;
+}
+
+
+// "2026-09-24" -> "24 de septiembre de 2026"
+function formatearFechaLarga(fecha) {
+
+    const partes = String(fecha || '').slice(0, 10).split('-');
+
+    if (partes.length !== 3) return '—';
+
+    const [anio, mes, dia] = partes.map(Number);
+
+    if (!anio || !mes || !dia || !MESES_CONTRATO[mes - 1]) return '—';
+
+    return `${dia} de ${MESES_CONTRATO[mes - 1]} de ${anio}`;
+}
+
+
+// "2026-09-24" -> "a los veinticuatro (24) días del mes de septiembre de 2026"
+function fechaDeFirmaEnLetras(fecha) {
+
+    const partes = String(fecha || '').slice(0, 10).split('-');
+
+    if (partes.length !== 3) return '—';
+
+    const [anio, mes, dia] = partes.map(Number);
+
+    if (!anio || !mes || !dia || !MESES_CONTRATO[mes - 1]) return '—';
+
+    const nombreMes = MESES_CONTRATO[mes - 1];
+
+    if (dia === 1) {
+        return `al primer (1) día del mes de ${nombreMes} de ${anio}`;
+    }
+
+    return `a los ${apocopar(numeroALetras(dia)).toLowerCase()} (${dia}) ` +
+        `días del mes de ${nombreMes} de ${anio}`;
+}
+
+
+// ============================================================
+// GÉNERO DEL TRABAJADOR (EL TRABAJADOR / LA TRABAJADORA)
+// ============================================================
+
+const TEXTO_GENERO_CONTRATO = {
+    art:    ['LA TRABAJADORA', 'EL TRABAJADOR'],
+    de:     ['de LA TRABAJADORA', 'del TRABAJADOR'],
+    a:      ['a LA TRABAJADORA', 'al TRABAJADOR'],
+    ident:  ['identificada', 'identificado'],
+    ultima: ['esta última', 'este último']
+};
+
+function aplicarGeneroContrato(sexo) {
+
+    const valor = String(sexo || '').trim().toLowerCase();
+
+    // 0 = femenino, 1 = masculino (si no hay dato, se usa el masculino genérico)
+    const indice = ['mujer', 'f', 'femenino'].includes(valor) ? 0 : 1;
+
+    document
+        .querySelectorAll('#contratoDocumento [data-g]')
+        .forEach((elemento) => {
+
+            const textos = TEXTO_GENERO_CONTRATO[elemento.dataset.g];
+
+            if (textos) elemento.textContent = textos[indice];
+
+        });
+}
+
+
+// Escribe un texto en un elemento sin fallar si el elemento no existe
+function escribirDoc(id, texto) {
+
+    const elemento = document.getElementById(id);
+
+    if (elemento) elemento.textContent = texto;
+}
+
+
+// ============================================================
 // DOCUMENTO DEL CONTRATO
 // ============================================================
 
@@ -951,47 +1147,38 @@ function actualizarDocumentoCandidato(
     candidato
 ) {
 
-    document.getElementById(
-        'docNombreTrabajador'
-    ).textContent =
-        candidato.nombre_completo ||
-        '—';
+    escribirDoc(
+        'docNombreTrabajador',
+        candidato.nombre_completo || '—'
+    );
 
+    escribirDoc(
+        'docDocumentoTrabajador',
+        candidato.numero_documento || '—'
+    );
 
-    document.getElementById(
-        'docDocumentoTrabajador'
-    ).textContent =
-        candidato.numero_documento ||
-        '—';
+    escribirDoc(
+        'docCargoTrabajador',
+        candidato.cargo || candidato.nombre_cargo || '—'
+    );
 
+    escribirDoc(
+        'docFirmaTrabajador',
+        candidato.nombre_completo || 'El Trabajador'
+    );
 
-    document.getElementById(
-        'docCargoTrabajador'
-    ).textContent =
-        candidato.cargo ||
-        candidato.nombre_cargo ||
-        '—';
+    escribirDoc(
+        'docFirmaDocumento',
+        candidato.numero_documento || '—'
+    );
 
+    escribirDoc(
+        'docFirmaCargo',
+        candidato.cargo || candidato.nombre_cargo || '—'
+    );
 
-    document.getElementById(
-        'docSedeTrabajador'
-    ).textContent =
-        candidato.nombre_sede ||
-        '—';
-
-
-    document.getElementById(
-        'docFirmaTrabajador'
-    ).textContent =
-        candidato.nombre_completo ||
-        'El Trabajador';
-
-
-    document.getElementById(
-        'docFirmaDocumento'
-    ).textContent =
-        candidato.numero_documento ||
-        '—';
+    // EL TRABAJADOR / LA TRABAJADORA según el género del candidato
+    aplicarGeneroContrato(candidato.sexo);
 
 }
 
@@ -1014,38 +1201,37 @@ function mostrarDocumento(
     );
 
 
-    document.getElementById(
-        'docSalario'
-    ).textContent =
-        formatearSalario(
+    escribirDoc(
+        'docSalario',
+        salarioEnLetras(
             contrato.salario
-        );
+        )
+    );
 
 
-    document.getElementById(
-        'docFechaInicio'
-    ).textContent =
-        formatearFecha(
+    escribirDoc(
+        'docFechaInicio',
+        formatearFechaLarga(
             contrato.fecha_inicio
-        );
+        )
+    );
 
 
-    document.getElementById(
-        'docFechaFin'
-    ).textContent =
-        contrato.fecha_fin
-            ? formatearFecha(
-                contrato.fecha_fin
-            )
-            : 'No definida';
+    // Fecha de firma: se toma la fecha de inicio del contrato
+    escribirDoc(
+        'docFirmaFecha',
+        fechaDeFirmaEnLetras(
+            contrato.fecha_inicio
+        )
+    );
 
 
-    document.getElementById(
-        'docFechaContrato'
-    ).textContent =
+    escribirDoc(
+        'docFechaContrato',
         new Date().toLocaleDateString(
             'es-CO'
-        );
+        )
+    );
 
 
     const numeroContrato =
@@ -1055,10 +1241,10 @@ function mostrarDocumento(
         ).padStart(4, '0')}`;
 
 
-    document.getElementById(
-        'docNumeroContrato'
-    ).textContent =
-        numeroContrato;
+    escribirDoc(
+        'docNumeroContrato',
+        numeroContrato
+    );
 
 
     contratoDocumento.scrollIntoView({
@@ -1067,6 +1253,8 @@ function mostrarDocumento(
     });
 
 }
+
+
 
 
 // ============================================================

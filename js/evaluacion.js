@@ -2,22 +2,21 @@ const entrevistaId =
     new URLSearchParams(window.location.search).get('id');
 
 const preguntasBase = [
-  ['Información general', '¿Por qué está interesado en trabajar en la empresa?'],
-  ['Información general', '¿Qué conoce de la empresa?'],
-  ['Información general', '¿Cuál considera que es su principal fortaleza?'],
 
-  ['Experiencia y conocimientos', '¿Qué experiencia tiene relacionada con el cargo?'],
-  ['Experiencia y conocimientos', '¿Qué conocimientos considera más importantes para desempeñar este cargo?'],
-  ['Experiencia y conocimientos', 'Describa una situación en la que tuvo que solucionar un problema.'],
+    ['Información general', '¿Por qué está interesado en trabajar en la empresa?'],
+    ['Información general', '¿Cuál considera que es su principal fortaleza?'],
 
-  ['Trabajo y comportamiento', '¿Cómo trabaja bajo presión?'],
-  ['Trabajo y comportamiento', '¿Cómo maneja los conflictos?'],
-  ['Trabajo y comportamiento', '¿Cómo trabaja en equipo?'],
-  ['Trabajo y comportamiento', '¿Cómo maneja una situación en la que comete un error?'],
+    ['Experiencia y conocimientos', '¿Qué experiencia tiene relacionada con el cargo?'],
+    ['Experiencia y conocimientos', '¿Qué conocimientos considera más importantes para desempeñar este cargo?'],
+    ['Experiencia y conocimientos', 'Describa una situación en la que tuvo que solucionar un problema.'],
 
-  ['Disponibilidad', 'Disponibilidad de horario.'],
-  ['Disponibilidad', 'Disponibilidad para desplazarse.'],
-  ['Disponibilidad', 'Observaciones adicionales.']
+    ['Trabajo y comportamiento', '¿Cómo actuaría frente a un desacuerdo o conflicto con un compañero de trabajo o superior, y qué estrategias utilizaría para encontrar una solución?'],
+    ['Trabajo y comportamiento', '¿Cómo contribuye al cumplimiento de los objetivos de un equipo de trabajo y cómo actúa cuando existen diferencias de opinión entre sus integrantes?'],
+    ['Trabajo y comportamiento', 'Cuando comete un error en el desarrollo de sus funciones, ¿cómo asume la situación, qué acciones implementa para corregirlo y cómo evita que vuelva a ocurrir?'],
+
+    ['Disponibilidad', '¿Cuenta con disponibilidad para trabajar en diferentes jornadas y turnos, incluidos horarios nocturnos, fines de semana y festivos, de acuerdo con las necesidades del servicio?'],
+    ['Disponibilidad', '¿Tiene disponibilidad para trasladarse a diferentes puestos de trabajo, municipios o ciudades cuando las necesidades de la operación lo requieran?'],
+    ['Disponibilidad', '¿Hay algún aspecto personal, laboral o profesional que considere importante mencionar y que pueda ser relevante para el proceso de selección?']
 ];
 
 
@@ -266,6 +265,8 @@ async function cargarEntrevista() {
   document.getElementById('datoCandidato').textContent =
       `${entrevista.candidato || 'Candidato'} · ${entrevista.numero_documento || 'Sin documento'}`;
 
+    document.getElementById('datoGenero').textContent =
+        entrevista.sexo || 'No especificado';
 
   document.getElementById('datoCargo').textContent =
       entrevista.cargo || '-';

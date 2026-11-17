@@ -39,6 +39,7 @@ async function loadDashboard() {
     body.innerHTML = postulaciones.slice(0, 5).map((p) => `
       <tr>
         <td>${escapeHtml(p.nombre_completo)}</td>
+        <td>${escapeHtml(p.sexo || 'No especificado')}</td>
         <td>${escapeHtml(p.cargo)}</td>
         <td>${escapeHtml(p.nombre_sede || 'Sin sede')}</td>
         <td>${new Date(p.fecha_postulacion).toLocaleDateString('es-CO')}</td>

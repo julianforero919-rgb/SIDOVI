@@ -132,30 +132,39 @@
         ></div>
 
 
-        <!-- TARJETA DE DATOS PERSONALES -->
+        <!-- TARJETA DE PERFIL -->
         <div class="profile-card">
 
             <form id="perfilForm">
 
-                <div class="field">
-                    <label for="nombreCompleto">
-                        Nombre completo
-                    </label>
+                <!-- CABECERA: FOTO ARRIBA -->
+                <div class="profile-hero">
+                    <div id="fotoVista" class="profile-hero-photo"></div>
 
-                    <input
-                            id="nombreCompleto"
-                            required
-                    >
+                    <div class="profile-hero-info">
+                        <h2 id="heroNombre">Mi perfil</h2>
+                        <p id="heroRol"></p>
+                        <p id="heroCorreo"></p>
+
+                        <label for="fotoPerfil" class="btn btn-outline profile-photo-btn">
+                            Cambiar foto
+                        </label>
+                        <input id="fotoPerfil" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+                        <small>JPG, PNG o WEBP. Máximo 5 MB.</small>
+                    </div>
                 </div>
 
 
+                <h3 class="profile-section-title">Datos personales</h3>
+
+                <div class="field">
+                    <label for="nombreCompleto">Nombre completo</label>
+                    <input id="nombreCompleto" required>
+                </div>
+
                 <div class="profile-grid">
-
                     <div class="field">
-                        <label for="tipoDocumento">
-                            Tipo de documento
-                        </label>
-
+                        <label for="tipoDocumento">Tipo de documento</label>
                         <select id="tipoDocumento">
                             <option>CC</option>
                             <option>CE</option>
@@ -163,71 +172,92 @@
                         </select>
                     </div>
 
-
                     <div class="field">
-                        <label for="numeroDocumento">
-                            Número de documento
-                        </label>
-
+                        <label for="numeroDocumento">Número de documento</label>
                         <input id="numeroDocumento">
                     </div>
 
+                    <div class="field">
+                        <label for="fechaNacimiento">Fecha de nacimiento</label>
+                        <input id="fechaNacimiento" type="date">
+                    </div>
 
                     <div class="field">
-                        <label for="telefono">
-                            Teléfono
-                        </label>
+                        <label for="sexo">Género</label>
+                        <select id="sexo">
+                            <option value="">Selecciona una opción</option>
+                            <option value="Hombre">Hombre</option>
+                            <option value="Mujer">Mujer</option>
+                        </select>
+                    </div>
+                </div>
 
+
+                <h3 class="profile-section-title">Contacto</h3>
+
+                <div class="profile-grid">
+                    <div class="field">
+                        <label for="telefono">Teléfono</label>
                         <input id="telefono">
                     </div>
 
+                    <div class="field">
+                        <label for="ciudad">Ciudad</label>
+                        <input id="ciudad">
+                    </div>
 
                     <div class="field">
-                        <label for="direccion">
-                            Dirección
-                        </label>
-
+                        <label for="direccion">Dirección</label>
                         <input id="direccion">
                     </div>
+                </div>
 
 
+                <h3 class="profile-section-title">Información laboral</h3>
+
+                <div class="profile-grid">
                     <div class="field">
-                        <label for="cargo">
-                            Cargo
-                        </label>
-
-                        <input
-                                id="cargo"
-                                placeholder="Gerente / Recursos Humanos"
-                        >
+                        <label for="cargo">Cargo</label>
+                        <input id="cargo" placeholder="Gerente / Recursos Humanos">
                     </div>
 
+                    <div class="field">
+                        <label for="area">Área o dependencia</label>
+                        <input id="area" placeholder="Ej. Gestión Humana">
+                    </div>
+
+                    <div class="field">
+                        <label for="fechaIngreso">Fecha de ingreso</label>
+                        <input id="fechaIngreso" type="date">
+                    </div>
                 </div>
 
+
+                <h3 class="profile-section-title">Contacto de emergencia</h3>
+
+                <div class="profile-grid">
+                    <div class="field">
+                        <label for="contactoEmergencia">Nombre del contacto</label>
+                        <input id="contactoEmergencia">
+                    </div>
+
+                    <div class="field">
+                        <label for="telefonoEmergencia">Teléfono del contacto</label>
+                        <input id="telefonoEmergencia">
+                    </div>
+                </div>
+
+
+                <h3 class="profile-section-title">Sobre mí</h3>
 
                 <div class="field">
-                    <label for="fotoPerfil">
-                        Foto de perfil
-                    </label>
-
-                    <input
-                            id="fotoPerfil"
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                    >
-
-                    <small>Máximo 5 MB.</small>
+                    <label for="descripcion">Descripción breve</label>
+                    <textarea id="descripcion" rows="3" maxlength="500"
+                              placeholder="Cuéntanos brevemente sobre tu experiencia y funciones."></textarea>
                 </div>
 
 
-                <!-- VISTA PREVIA DE LA FOTO -->
-                <div id="fotoVista"></div>
-
-
-                <button
-                        class="btn btn-primary"
-                        type="submit"
-                >
+                <button class="btn btn-primary" type="submit">
                     Guardar perfil
                 </button>
 

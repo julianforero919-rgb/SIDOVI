@@ -580,12 +580,45 @@ tbody td {padding: 0.85rem 1rem; color: var(--texto); vertical-align: middle;}
       .tabla-contenedor td {white-space: nowrap;}
     }
 
-    @media print {
-      body * {visibility: hidden;}
+@page {size: A4; margin: 18mm 16mm;}
 
-      #contratoDocumento,
-      #contratoDocumento * {visibility: visible;}
+@media print {
+    body {background: #fff !important;}
 
-      #contratoDocumento {position: absolute; left: 0; top: 0; width: 100%; border: 0;}
-    }
+    /* Oculta toda la página excepto la ventana del contrato */
+    body > *:not(#contratoModal) {display: none !important;}
+
+    /* Quita lo que hace que la ventana sea fija y con scroll */
+    #contratoModal {position: static !important; display: block !important; background: none !important; padding: 0 !important;}
+
+    .contrato-modal-content {width: 100% !important; max-height: none !important; height: auto !important; overflow: visible !important; border-radius: 0 !important; box-shadow: none !important;}
+
+    .contrato-modal-header {display: none !important;}
+
+    .contrato-modal-body {padding: 0 !important;}
+
+    /* Dentro de la ventana, solo el contrato */
+    .contrato-modal-body > *:not(#contratoDocumento) {display: none !important;}
+
+    #contratoDocumento {position: static !important; margin: 0 !important; padding: 0 !important; border: 0 !important;}
+
+    /* Los botones no se imprimen */
+    #contratoDocumento .modal-actions {display: none !important;}
+
+    /* Cláusulas y firmas no se cortan entre páginas */
+    .clausula {break-inside: avoid; page-break-inside: avoid;}
+    .firmas-contrato {break-inside: avoid; page-break-inside: avoid;}
+}
 .sidovi-inline-1 {margin-top:2rem;}
+
+
+/* ===== Contrato nuevo: textos y listas ===== */
+.contrato-documento .mayus{text-transform:uppercase;}
+.contrato-documento .clausula h3{text-transform:uppercase;}
+.contrato-documento .clausula p,
+.contrato-documento .contrato-intro{text-align:justify;}
+.contrato-documento .contrato-intro{margin-bottom:1.2rem; line-height:1.6;}
+.contrato-documento .clausula ul{list-style:disc; padding-left:1.4rem; margin:.5rem 0;}
+.contrato-documento .clausula li{margin-bottom:.3rem; text-align:justify;}
+.contrato-documento-header h2{font-size:1.3rem;}
+

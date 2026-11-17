@@ -230,6 +230,11 @@ reporteForm?.addEventListener('submit', async event => {
           <strong>Número de documento</strong>
           <span>${esc(p.numero_documento)}</span>
         </div>
+        
+                <div>
+          <strong>Género</strong>
+          <span>${esc(p.sexo || 'No especificado')}</span>
+        </div>
 
         <div>
           <strong>Teléfono</strong>
