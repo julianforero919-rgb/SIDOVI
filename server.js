@@ -234,11 +234,12 @@ app.delete('/api/aspirantes/:id', async (req, res) => {
   catch (error) { await client.query('ROLLBACK'); errorResponse(res, error, 'No fue posible eliminar el aspirante.'); } finally { client.release(); }
 });
 
-// Normaliza el género a los únicos valores válidos: 'Hombre' | 'Mujer' (o null si no es válido).
+// Normaliza el género a los únicos valores válidos: 'Hombre' | 'Mujer' | 'Otro' (o null si no es válido).
 function normalizarGenero(valor) {
   const v = String(valor || '').trim().toUpperCase();
   if (['M', 'MASCULINO', 'HOMBRE'].includes(v)) return 'Hombre';
   if (['F', 'FEMENINO', 'MUJER'].includes(v)) return 'Mujer';
+  if (['O', 'OTRO', 'OTRA', 'OTRX'].includes(v)) return 'Otro';
   return null;
 }
 
@@ -523,9 +524,9 @@ app.put(
 );
 
 app.post('/api/postulaciones', async (req, res) => {
-  const sexo = normalizarGenero(sexoRecibido);
-  if (!sexo) return res.status(400).json({ error: 'Debes seleccionar el género (Hombre o Mujer).' });
   const { idPostulante, idAspirante, nombre, nombreCompleto, apellido, cedula, numeroDocumento, email, correo, telefono, ciudad, direccion, sexo: sexoRecibido, cargo, idVacante, documentos = [] } = req.body;
+  const sexo = normalizarGenero(sexoRecibido);
+  if (!sexo) return res.status(400).json({ error: 'Debes seleccionar el género (Hombre, Mujer u Otro).' });
   const client = await db.connect();
   try {
     await client.query('BEGIN');
@@ -4914,6 +4915,10 @@ app.get(
               ('F', 'FEMENINO', 'MUJER')
               THEN 'Mujeres'
 
+            WHEN UPPER(TRIM(COALESCE(a.sexo, ''))) IN
+              ('O', 'OTRO', 'OTRA', 'OTRX')
+              THEN 'Otro'
+
             ELSE 'No especificado'
           END AS sexo,
 
@@ -5633,7 +5638,7 @@ app.patch('/api/auth/perfil', requireRoles('RRHH', 'Gerente'), async (req, res) 
   } = req.body;
   if (fotoPerfil && String(fotoPerfil).length > 8 * 1024 * 1024) return res.status(413).json({ error: 'La foto supera el límite de 8 MB.' });
   const generoPerfil = String(sexo || '').trim();
-  if (generoPerfil && !['Hombre', 'Mujer'].includes(generoPerfil)) return res.status(400).json({ error: 'El género debe ser Hombre o Mujer.' });
+  if (generoPerfil && !['Hombre', 'Mujer', 'Otro'].includes(generoPerfil)) return res.status(400).json({ error: 'El género debe ser Hombre, Mujer u Otro.' });
   const fechaValida = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? v : null);
   try {
     const result = await db.query(`UPDATE usuario SET

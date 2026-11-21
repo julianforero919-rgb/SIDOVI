@@ -8,6 +8,15 @@ ALTER TABLE usuario ADD COLUMN IF NOT EXISTS contacto_emergencia varchar(120) NO
 ALTER TABLE usuario ADD COLUMN IF NOT EXISTS telefono_emergencia varchar(30) NOT NULL DEFAULT '';
 ALTER TABLE usuario ADD COLUMN IF NOT EXISTS descripcion varchar(500) NOT NULL DEFAULT '';
 
+UPDATE usuario SET sexo = 'Hombre'
+WHERE UPPER(TRIM(COALESCE(sexo,''))) IN ('M','MASCULINO','HOMBRE');
+UPDATE usuario SET sexo = 'Mujer'
+WHERE UPPER(TRIM(COALESCE(sexo,''))) IN ('F','FEMENINO','MUJER');
+UPDATE usuario SET sexo = 'Otro'
+WHERE UPPER(TRIM(COALESCE(sexo,''))) IN ('O','OTRO','OTRA','OTRX');
+UPDATE usuario SET sexo = NULL
+WHERE sexo IS NOT NULL AND sexo NOT IN ('Hombre','Mujer','Otro');
+
 ALTER TABLE usuario DROP CONSTRAINT IF EXISTS chk_usuario_sexo;
 ALTER TABLE usuario ADD CONSTRAINT chk_usuario_sexo
-    CHECK (sexo IS NULL OR sexo IN ('Hombre','Mujer'));
+    CHECK (sexo IS NULL OR sexo IN ('Hombre','Mujer','Otro'));
