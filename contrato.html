@@ -15,10 +15,7 @@
 
 <body>
 
-<!-- ============================= -->
-<!-- ENCABEZADO -->
-<!-- ============================= -->
-
+<!-- Barra superior con navegación general y cierre de sesión. -->
 <header class="site-header">
   <div class="header-inner">
 
@@ -56,12 +53,10 @@
 </header>
 
 
-<!-- ============================= -->
-<!-- CONTENIDO PRINCIPAL -->
-<!-- ============================= -->
-
+<!-- Panel para revisar candidatos y administrar sus contratos. -->
 <div class="panel-layout">
 
+  <!-- Accesos a las herramientas de gerencia. -->
   <aside class="sidebar" aria-label="Menú de gerencia">
     <span class="sidebar-title">Gestión</span>
     <a href="gerente.html" class="sidebar-link">Dashboard</a>
@@ -94,10 +89,7 @@
     </div>
 
 
-    <!-- ================================================= -->
-    <!-- 1. PERSONAS PRÓXIMAS A CONTRATO -->
-    <!-- ================================================= -->
-
+    <!-- Candidatos aprobados que están listos para iniciar la contratación. -->
     <section
             class="data-table-wrap contratos-section"
             aria-labelledby="proximosContratoTitle"
@@ -144,10 +136,7 @@
     </section>
 
 
-    <!-- ================================================= -->
-    <!-- 2. PERSONAS CONTRATADAS -->
-    <!-- ================================================= -->
-
+    <!-- Personas cuyo contrato ya fue generado. -->
     <section
             class="data-table-wrap contratos-section"
             aria-labelledby="contratadosTitle"
@@ -200,10 +189,7 @@
 </div>
 
 
-<!-- ================================================= -->
-<!-- MODAL PARA GENERAR / EDITAR CONTRATO -->
-<!-- ================================================= -->
-
+<!-- Ventana para completar los datos y generar el contrato laboral. -->
 <div
         id="contratoModal"
         class="contrato-modal"
@@ -244,10 +230,7 @@
       ></div>
 
 
-      <!-- ============================================= -->
-      <!-- DATOS DEL CANDIDATO -->
-      <!-- ============================================= -->
-
+      <!-- Información de identidad y postulación del candidato elegido. -->
       <section
               id="datosCandidatoContrato"
               class="datos-candidato"
@@ -316,10 +299,7 @@
       </section>
 
 
-      <!-- ============================================= -->
-      <!-- FORMULARIO DEL CONTRATO -->
-      <!-- ============================================= -->
-
+      <!-- Fechas, salario, condiciones y cita para firmar el contrato. -->
       <form id="contratoForm">
 
         <input
@@ -527,11 +507,7 @@
       </form>
 
 
-      <!-- ============================================= -->
-      <!-- DOCUMENTO DEL CONTRATO -->
-      <!-- SOLO SE MUESTRA AL GENERAR / EDITAR -->
-      <!-- ============================================= -->
-
+      <!-- Documento laboral que se completa con los datos del formulario. -->
       <section
               id="contratoDocumento"
               class="contrato-documento"
@@ -581,7 +557,7 @@
         </p>
 
 
-        <!-- CLÁUSULA PRIMERA -->
+        <!-- Define el cargo y las funciones contratadas. -->
         <div class="clausula">
           <h3>CLÁUSULA PRIMERA. OBJETO DEL CONTRATO</h3>
           <p>
@@ -596,7 +572,7 @@
         </div>
 
 
-        <!-- CLÁUSULA SEGUNDA -->
+        <!-- Establece la duración y vigencia del contrato. -->
         <div class="clausula">
           <h3>CLÁUSULA SEGUNDA. DURACIÓN DEL CONTRATO</h3>
           <p>
@@ -609,7 +585,7 @@
         </div>
 
 
-        <!-- CLÁUSULA TERCERA -->
+        <!-- Indica dónde se prestarán los servicios. -->
         <div class="clausula">
           <h3>CLÁUSULA TERCERA. LUGAR DE PRESTACIÓN DEL SERVICIO</h3>
           <p>
@@ -626,7 +602,7 @@
         </div>
 
 
-        <!-- CLÁUSULA CUARTA -->
+        <!-- Describe el salario y la forma de pago. -->
         <div class="clausula">
           <h3>CLÁUSULA CUARTA. SALARIO Y FORMA DE PAGO</h3>
           <p>
@@ -643,7 +619,7 @@
         </div>
 
 
-        <!-- CLÁUSULA QUINTA -->
+        <!-- Define la jornada y los horarios laborales. -->
         <div class="clausula">
           <h3>CLÁUSULA QUINTA. JORNADA LABORAL</h3>
           <p>
@@ -659,7 +635,7 @@
         </div>
 
 
-        <!-- CLÁUSULA SEXTA -->
+        <!-- Enumera las responsabilidades principales del cargo. -->
         <div class="clausula">
           <h3>CLÁUSULA SEXTA. FUNCIONES Y RESPONSABILIDADES DEL CARGO</h3>
           <p>
@@ -681,7 +657,7 @@
         </div>
 
 
-        <!-- CLÁUSULA SÉPTIMA -->
+        <!-- Resume las obligaciones de la persona contratada. -->
         <div class="clausula">
           <h3>CLÁUSULA SÉPTIMA. OBLIGACIONES <span data-g="de">de LA TRABAJADORA</span></h3>
           <p>
@@ -699,7 +675,7 @@
         </div>
 
 
-        <!-- CLÁUSULA OCTAVA -->
+        <!-- Resume los compromisos de la empresa empleadora. -->
         <div class="clausula">
           <h3>CLÁUSULA OCTAVA. OBLIGACIONES DEL EMPLEADOR</h3>
           <p>EL EMPLEADOR se compromete a:</p>
@@ -714,7 +690,7 @@
         </div>
 
 
-        <!-- CLÁUSULA NOVENA -->
+        <!-- Describe la afiliación y las prestaciones laborales. -->
         <div class="clausula">
           <h3>CLÁUSULA NOVENA. SEGURIDAD SOCIAL Y PRESTACIONES SOCIALES</h3>
           <p>
@@ -732,7 +708,7 @@
         </div>
 
 
-        <!-- CLÁUSULA DÉCIMA -->
+        <!-- Establece deberes de confidencialidad y protección de datos. -->
         <div class="clausula">
           <h3>CLÁUSULA DÉCIMA. CONFIDENCIALIDAD Y PROTECCIÓN DE DATOS</h3>
           <p>
@@ -753,7 +729,7 @@
         </div>
 
 
-        <!-- CLÁUSULA DÉCIMA PRIMERA -->
+        <!-- Define las condiciones del periodo de prueba. -->
         <div class="clausula">
           <h3>CLÁUSULA DÉCIMA PRIMERA. PERÍODO DE PRUEBA</h3>
           <p>
@@ -766,7 +742,7 @@
         </div>
 
 
-        <!-- CLÁUSULA DÉCIMA SEGUNDA -->
+        <!-- Indica las condiciones legales para terminar el contrato. -->
         <div class="clausula">
           <h3>CLÁUSULA DÉCIMA SEGUNDA. TERMINACIÓN DEL CONTRATO</h3>
           <p>
@@ -778,7 +754,7 @@
         </div>
 
 
-        <!-- CLÁUSULA DÉCIMA TERCERA -->
+        <!-- Registra la aceptación de las condiciones del contrato. -->
         <div class="clausula">
           <h3>CLÁUSULA DÉCIMA TERCERA. ACEPTACIÓN Y FIRMA</h3>
           <p>
@@ -793,7 +769,7 @@
         </div>
 
 
-        <!-- FIRMAS -->
+        <!-- Espacios de firma para la empresa y la persona contratada. -->
         <div class="firmas-contrato">
 
           <div class="firma">
@@ -818,7 +794,7 @@
 
 
 
-        <!-- ACCIONES DEL DOCUMENTO -->
+        <!-- Opciones para cerrar, exportar o imprimir el contrato. -->
 
         <div
                 class="modal-actions sidovi-inline-1"
@@ -860,10 +836,7 @@
 </div>
 
 
-<!-- ============================= -->
-<!-- PIE DE PÁGINA -->
-<!-- ============================= -->
-
+<!-- Pie de página institucional. -->
 <footer class="site-footer">
 
   <div class="footer-inner">
@@ -883,10 +856,7 @@
 </footer>
 
 
-<!-- ============================= -->
-<!-- JAVASCRIPT -->
-<!-- ============================= -->
-
+<!-- Scripts para la navegación, gestión de contratos y transiciones. -->
 <script src="js/nav.js"></script>
 <script src="js/contrato.js"></script>
 

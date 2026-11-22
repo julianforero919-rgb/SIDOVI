@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/page-transition.css">
 </head>
 <body>
+<!-- Barra superior con acceso al inicio público y cierre de sesión. -->
 <header class="site-header">
   <div class="header-inner">
     <div class="brand"><img src="img/colviseg.png" alt="Logo SIDOVI" class="brand-logo" /></div>
@@ -23,7 +24,7 @@
 </header>
 
 <div class="panel-layout">
-  <!-- SIDEBAR -->
+  <!-- Menú para navegar entre las herramientas de Recursos Humanos. -->
   <aside class="sidebar" aria-label="Menú del panel">
     <span class="sidebar-title">Gestión</span>
     <a href="RRHH.html" class="sidebar-link active" aria-current="page">Dashboard</a>
@@ -37,7 +38,7 @@
     <a href="mi-perfil.html" class="sidebar-link profile-sidebar-link">Mi perfil</a>
   </aside>
 
-  <!-- CONTENT -->
+  <!-- Panel principal con resumen, filtros y postulaciones recientes. -->
   <main class="panel-content" aria-labelledby="rrhh-title">
     <div id="panelLoader" class="panel-loader" aria-live="polite" aria-label="Cargando panel">
       <div class="loader-ring"></div>
@@ -58,6 +59,7 @@
       </select>
     </div>
 
+    <!-- Indicadores generales del proceso de selección. -->
     <div class="stats-row">
       <div class="stat-box">
         <div class="stat-num" id="statTotal">0</div>
@@ -79,6 +81,7 @@
         <div class="stat-label">Aprobados para Contrato</div>
       </div>
     </div>
+    <!-- Tabla con las postulaciones recientes y sus acciones disponibles. -->
     <div class="data-table-wrap" aria-label="Últimas postulaciones">
       <h2>Últimas Postulaciones</h2>
       <table>
@@ -106,12 +109,14 @@
   </main>
 </div>
 
+<!-- Pie de página institucional. -->
 <footer class="site-footer">
   <div class="footer-inner">
     <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
     <p>&copy; 2026 SIDOVI · Colviseg Ltda.</p>
   </div>
 </footer>
+<!-- Scripts para cargar la identidad, los datos del panel y la navegación. -->
 <script src="js/panel-identity.js"></script><script src="js/RRHH.js"></script>
 <script src="js/rrhh-header.js"></script>
 <script src="js/page-transition.js"></script>

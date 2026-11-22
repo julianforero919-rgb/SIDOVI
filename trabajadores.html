@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/page-transition.css">
 </head>
 <body>
+  <!-- Encabezado con acceso al inicio público y cierre de sesión. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand"><img src="img/logo_sidovi.png" alt="Logo SIDOVI" class="brand-logo" /></div>
@@ -22,6 +23,7 @@
   </header>
 
   <div class="panel-layout">
+    <!-- Navegación entre las herramientas de gerencia. -->
     <aside class="sidebar" aria-label="Menú de gerencia">
       <span class="sidebar-title">Gestión</span>
       <a href="gerente.html" class="sidebar-link">Dashboard</a>
@@ -34,12 +36,14 @@
       <a href="mi-perfil.html" class="sidebar-link profile-sidebar-link">Mi perfil</a>
     </aside>
 
+    <!-- Resumen, filtros y listado del personal vinculado. -->
     <main class="panel-content" aria-labelledby="trab-title">
       <div class="panel-header">
         <h1 id="trab-title">Personal Activo</h1>
         <p>Registro completo de trabajadores vinculados a Colviseg Ltda.</p>
       </div>
 
+      <!-- Indicadores rápidos de composición del personal. -->
       <div class="stats-row">
         <div class="stat-box"><div class="stat-num">18</div><div class="stat-label">Total Trabajadores</div></div>
         <div class="stat-box"><div class="stat-num">12</div><div class="stat-label">Operativos</div></div>
@@ -47,6 +51,7 @@
         <div class="stat-box"><div class="stat-num">2</div><div class="stat-label">Nuevos este mes</div></div>
       </div>
 
+      <!-- Filtros para buscar trabajadores por nombre, área o contrato. -->
       <div class="filter-bar" role="search" aria-label="Filtrar trabajadores">
         <input type="text" id="buscarTrab" placeholder="🔍 Buscar por nombre o cargo..." aria-label="Buscar trabajador" />
         <select id="filtroArea" aria-label="Filtrar por área">
@@ -62,6 +67,7 @@
         </select>
       </div>
 
+      <!-- Tabla con los datos laborales y acciones del personal. -->
       <div class="data-table-wrap">
         <h2>Lista de Personal (18 trabajadores)</h2>
         <table id="tablaTrabajadores">
@@ -91,12 +97,14 @@
     </main>
   </div>
 
+  <!-- Pie de página institucional. -->
   <footer class="site-footer">
     <div class="footer-inner">
       <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
       <p>&copy; 2026 SIDOVI · Colviseg Ltda.</p>
     </div>
   </footer>
+  <!-- Scripts para gestionar los datos laborales y las transiciones. -->
   <script src="js/trabajadores.js"></script>
   <script src="js/page-transition.js"></script>
 </body>

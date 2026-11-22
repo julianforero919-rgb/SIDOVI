@@ -9,6 +9,7 @@
 </head>
 <body>
 
+  <!-- Navegación pública del proceso de selección. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
@@ -27,6 +28,7 @@
 
   <main>
 
+    <!-- Introducción al formulario de postulación. -->
     <section class="page-hero" aria-labelledby="form-page-title">
       <div class="container">
         <h1 id="form-page-title">Formulario de <span class="accent">Postulación</span></h1>
@@ -34,6 +36,7 @@
       </div>
     </section>
 
+    <!-- Formulario para registrar datos, experiencia y documentos del aspirante. -->
     <section class="form-section" aria-labelledby="form-title">
       <div class="container form-container">
 
@@ -41,10 +44,10 @@
 
         <div id="form-alert" class="form-alert" role="alert" aria-live="polite" hidden></div>
 
-        <!-- FORM (no <form> tag for HTML artifact compatibility; uses divs + JS) -->
+        <!-- Contenedor procesado por JavaScript para validar y enviar la postulación. -->
         <div class="postulation-form" id="postForm">
 
-          <!-- DATOS PERSONALES -->
+          <!-- Identificación e información de contacto del aspirante. -->
           <fieldset class="form-group">
             <legend class="visually-hidden">Información Personal</legend>
             <h3 class="form-section-title">Información Personal</h3>
@@ -96,7 +99,7 @@
       </div>
           </fieldset>
 
-          <!-- DATOS LABORALES -->
+          <!-- Cargo solicitado y antecedentes de experiencia laboral. -->
           <fieldset class="form-group">
             <legend class="visually-hidden">Información Laboral</legend>
             <h3 class="form-section-title">Información Laboral</h3>
@@ -130,7 +133,7 @@
             </div>
           </fieldset>
 
-          <!-- DOCUMENTOS -->
+          <!-- Archivos requeridos y autorización para tratar los datos personales. -->
           <fieldset class="form-group">
             <legend class="visually-hidden">Documentos</legend>
             <h3 class="form-section-title">Documentos</h3>
@@ -209,7 +212,7 @@
             </div>
           </fieldset>
 
-          <!-- BOTONES -->
+          <!-- Acciones para limpiar o enviar la postulación. -->
           <div class="form-actions">
             <button type="button" class="btn btn-outline" id="btnLimpiar">Limpiar Formulario</button>
             <button type="button" class="btn btn-primary" id="btnEnviar">Enviar Postulación</button>
@@ -217,7 +220,7 @@
 
         </div>
 
-        <!-- CONFIRMACIÓN -->
+        <!-- Resultado mostrado después de enviar la postulación. -->
         <div class="confirmation" id="confirmacion" hidden aria-live="polite">
           <div class="confirm-icon" aria-hidden="true">✅</div>
           <h2>¡Postulación Enviada!</h2>
@@ -234,6 +237,7 @@
 
   </main>
 
+  <!-- Pie de página institucional. -->
   <footer class="site-footer">
     <div class="footer-inner">
       <img src="img/logo_sidovi.png" alt="SIDOVI logo" class="footer-logo" />
@@ -241,8 +245,9 @@
     </div>
   </footer>
 
+  <!-- Scripts de postulación y asistente virtual. -->
   <script src="js/postulacion.js"></script>
-  <!-- CHATBOT SIDOVI -->
+  <!-- Asistente virtual para consultas durante la postulación. -->
 <button id="chatbotButton" class="chatbot-button" type="button" aria-label="Abrir chatbot SIDOVI" title="Abrir chatbot">💬</button>
 <section id="chatbotContainer" class="chatbot-container" aria-label="Chatbot SIDOVI">
   <header class="chatbot-header">

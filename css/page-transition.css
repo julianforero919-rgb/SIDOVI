@@ -1,48 +1,33 @@
-```css
+/* Transiciones y carga de páginas */
+
+/* Animación activa del menú */
+
 @media (prefers-reduced-motion: no-preference) {
-
   body .sidebar[aria-label="Menú de gerencia"] .sidebar-link.active {
-
-    animation:
-            sidovi-manager-active-enter
-            450ms
-            cubic-bezier(0.25, 0.8, 0.25, 1)
-            both;
-
+    animation: sidovi-manager-active-enter 450ms
+      cubic-bezier(0.25, 0.8, 0.25, 1) both;
   }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   body .sidebar[aria-label="Menú de gerencia"] .sidebar-link.active {
-
     animation: none;
-
   }
-
 }
 
 @keyframes sidovi-manager-active-enter {
-
   from {
-
     background-color: transparent;
     border-left-color: transparent;
-
   }
 
   to {
-
     background-color: rgba(200, 25, 43, 0.18);
     border-left-color: #c8192b;
-
   }
-
 }
 
 @media (prefers-reduced-motion: no-preference) {
-
   body {
     animation: sidovi-page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
@@ -50,16 +35,13 @@
   body.page-leaving {
     animation: sidovi-page-leave 180ms ease-in both;
   }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   body,
   body.page-leaving {
     animation: none;
   }
-
 }
 
 .site-footer {
@@ -77,8 +59,8 @@ img[src$="logo_sidovi.png"] {
   object-fit: contain;
 }
 
+/* Entrada y salida de páginas */
 @keyframes sidovi-page-enter {
-
   from {
     opacity: 0;
   }
@@ -86,15 +68,12 @@ img[src$="logo_sidovi.png"] {
   to {
     opacity: 1;
   }
-
 }
 
 @keyframes sidovi-page-leave {
-
   to {
     opacity: 0;
   }
-
 }
 
 .panel-loader {
@@ -108,7 +87,9 @@ img[src$="logo_sidovi.png"] {
   gap: 1rem;
   background: rgba(2, 6, 33, 0.8);
   backdrop-filter: blur(5px);
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
 }
 
 .panel-loader .loader-ring {

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/hojasdevida.css">
 </head>
 <body>
+  <!-- Encabezado de acceso al panel. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
@@ -21,7 +22,9 @@
       <button class="menu-toggle" id="menuToggle">☰</button>
     </div>
   </header>
+  <!-- Distribución del panel con navegación lateral y contenido. -->
   <div class="panel-layout">
+    <!-- Accesos a las secciones de Recursos Humanos. -->
     <aside class="sidebar">
       <span class="sidebar-title">Gestión</span>
       <a href="RRHH.html" class="sidebar-link">Dashboard</a>
@@ -34,15 +37,18 @@
       <span class="sidebar-title">Accesos</span>
       <a href="ofertas.html" class="sidebar-link">Ofertas públicas</a>
     </aside>
+    <!-- Consulta y búsqueda de hojas de vida recibidas. -->
     <main class="panel-content">
       <div class="panel-header">
         <h1>Hojas de Vida Recibidas</h1>
         <p>Consulta la información, fotografía y documentos entregados por cada postulante.</p>
       </div>
+      <!-- Área para mostrar avisos y buscar aspirantes. -->
       <div id="hv-alert" class="form-alert" hidden></div>
       <div class="filter-bar">
         <input id="hvBuscar" type="search" placeholder="Buscar por nombre, documento o cargo" aria-label="Buscar aspirante">
       </div>
+      <!-- Resultados con enlaces a documentos y acciones por aspirante. -->
       <div class="data-table-wrap">
         <table>
           <thead>
@@ -62,12 +68,14 @@
       </div>
     </main>
   </div>
+  <!-- Pie de página institucional. -->
   <footer class="site-footer">
     <div class="footer-inner">
       <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo">
       <p>&copy; 2026 SIDOVI · Colviseg Ltda.</p>
     </div>
   </footer>
+  <!-- Scripts que cargan las hojas de vida y controlan la navegación. -->
   <script src="js/hojasdevida.js"></script>
   <script src="js/rrhh-header.js"></script>
   <script src="js/page-transition.js"></script>

@@ -16,6 +16,7 @@
 
 <body>
 
+<!-- Encabezado de acceso a reportes y opciones de cuenta. -->
 <header class="site-header">
 
     <div class="header-inner">
@@ -74,10 +75,7 @@
 
 <div class="panel-layout">
 
-    <!-- =====================================================
-         SIDEBAR
-         ===================================================== -->
-
+    <!-- Menú para navegar entre las secciones del panel. -->
     <aside class="sidebar">
 
         <span class="sidebar-title">
@@ -97,10 +95,7 @@
     </aside>
 
 
-    <!-- =====================================================
-         CONTENIDO
-         ===================================================== -->
-
+    <!-- Consulta del historial de postulaciones por aspirante. -->
     <main class="panel-content">
 
         <div class="panel-header">
@@ -117,10 +112,7 @@
         </div>
 
 
-        <!-- =====================================================
-             NAVEGACIÓN ENTRE REPORTES
-             ===================================================== -->
-
+        <!-- Alterna entre el historial individual y las estadísticas generales. -->
         <div class="report-navigation">
 
             <a
@@ -140,10 +132,7 @@
         </div>
 
 
-        <!-- =====================================================
-             ALERTA
-             ===================================================== -->
-
+        <!-- Mensajes del resultado de la consulta. -->
         <div
                 id="reportAlert"
                 class="form-alert"
@@ -151,10 +140,7 @@
         ></div>
 
 
-        <!-- =====================================================
-             CONSULTA DEL ASPIRANTE
-             ===================================================== -->
-
+        <!-- Selección del aspirante cuyo historial se desea consultar. -->
         <section class="data-table-wrap aspirante-consulta">
 
             <div class="panel-header">
@@ -211,10 +197,7 @@
         </section>
 
 
-        <!-- =====================================================
-             INFORMACIÓN DEL ASPIRANTE
-             ===================================================== -->
-
+        <!-- Datos generales del aspirante seleccionado. -->
         <section
                 class="data-table-wrap"
                 id="datosAspirante"
@@ -237,10 +220,7 @@
         </section>
 
 
-        <!-- =====================================================
-             HISTORIAL
-             ===================================================== -->
-
+        <!-- Etapas y registros de las postulaciones del aspirante. -->
         <section
                 class="data-table-wrap"
                 id="historialAspirante"
@@ -266,10 +246,7 @@
         </section>
 
 
-        <!-- =====================================================
-             GENERAR PDF
-             ===================================================== -->
-
+        <!-- Genera un documento con el historial consultado. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -304,6 +281,7 @@
 
 </div>
 
+<!-- Pie de página institucional. -->
 <footer class="site-footer">
     <div class="footer-inner">
         <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
@@ -311,6 +289,7 @@
     </div>
 </footer>
 
+<!-- Scripts para consultar el historial y generar el reporte. -->
 <script src="js/reporte.js"></script>
 <script src="js/gerencia-header.js"></script>
 <script src="js/rrhh-header.js"></script>

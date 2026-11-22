@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/page-transition.css">
 </head>
 <body>
+  <!-- Barra superior con navegación y acceso a la sesión. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand"><img src="img/logo_sidovi.png" alt="Logo SIDOVI" class="brand-logo" /></div>
@@ -23,6 +24,7 @@
   </header>
 
   <div class="panel-layout">
+    <!-- Enlaces a las herramientas del panel de Recursos Humanos. -->
     <aside class="sidebar" aria-label="Menú del panel">
       <span class="sidebar-title">Gestión</span>
       <a href="RRHH.html" class="sidebar-link">Dashboard</a>
@@ -36,12 +38,14 @@
       <a href="ofertas.html" class="sidebar-link">Ofertas públicas</a>
     </aside>
 
+    <!-- Consulta, filtrado y administración de postulantes. -->
     <main class="panel-content" aria-labelledby="post-title">
       <div class="panel-header">
         <h1 id="post-title">Gestión de Postulantes</h1>
         <p>Consulta, filtra y gestiona todos los candidatos registrados en el sistema.</p>
       </div>
 
+      <!-- Filtros para localizar postulantes por texto, estado o cargo. -->
       <div class="filter-bar" role="search" aria-label="Filtrar postulantes">
         <input type="text" id="buscar" placeholder="🔍 Buscar por nombre o cédula..." aria-label="Buscar postulante" />
         <select id="filtroEstado" aria-label="Filtrar por estado">
@@ -66,6 +70,7 @@
         </select>
       </div>
 
+      <!-- Tabla de postulaciones y acciones disponibles para cada persona. -->
       <div class="data-table-wrap">
         <h2 id="tituloLista">Lista de Postulantes</h2>
         <table id="tablaPostulantes">
@@ -88,6 +93,7 @@
     </main>
   </div>
 
+  <!-- Ventana para editar los datos de una postulación seleccionada. -->
   <div class="candidate-modal" id="candidateModal" hidden>
     <div class="candidate-modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <button class="modal-close" id="modalClose" aria-label="Cerrar">×</button>
@@ -103,12 +109,14 @@
     </div>
   </div>
 
+  <!-- Pie de página institucional. -->
   <footer class="site-footer">
     <div class="footer-inner">
       <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
       <p>&copy; 2026 SIDOVI · Colviseg Ltda.</p>
     </div>
   </footer>
+  <!-- Scripts para gestionar postulantes, navegación y transiciones. -->
   <script src="js/postulantes.js"></script>
   <script src="js/rrhh-header.js"></script>
   <script src="js/page-transition.js"></script>

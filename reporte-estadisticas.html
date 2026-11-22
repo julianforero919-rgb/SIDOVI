@@ -16,6 +16,7 @@
 
 <body>
 
+<!-- Encabezado de acceso a reportes y opciones de cuenta. -->
 <header class="site-header">
 
     <div class="header-inner">
@@ -78,11 +79,7 @@
 
 <div class="panel-layout">
 
-
-    <!-- =====================================================
-         SIDEBAR
-         ===================================================== -->
-
+    <!-- Menú para navegar entre las secciones del panel. -->
     <aside class="sidebar">
 
         <span class="sidebar-title">
@@ -102,10 +99,7 @@
     </aside>
 
 
-    <!-- =====================================================
-         CONTENIDO
-         ===================================================== -->
-
+    <!-- Consulta de indicadores del proceso de selección. -->
     <main class="panel-content">
 
         <div class="panel-header">
@@ -122,10 +116,7 @@
         </div>
 
 
-        <!-- =====================================================
-             NAVEGACIÓN
-             ===================================================== -->
-
+        <!-- Acceso al historial individual o a las estadísticas. -->
         <div class="report-navigation">
 
             <a
@@ -145,10 +136,7 @@
         </div>
 
 
-        <!-- =====================================================
-             ALERTA
-             ===================================================== -->
-
+        <!-- Mensajes sobre el resultado de la consulta estadística. -->
         <div
                 id="reportAlert"
                 class="form-alert"
@@ -156,10 +144,7 @@
         ></div>
 
 
-        <!-- =====================================================
-             FILTROS
-             ===================================================== -->
-
+        <!-- Define el periodo para calcular las estadísticas. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -226,10 +211,7 @@
         </section>
 
 
-        <!-- =====================================================
-             RESUMEN
-             ===================================================== -->
-
+        <!-- Indicadores generales del periodo seleccionado. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -248,10 +230,7 @@
         </section>
 
 
-        <!-- =====================================================
-             GÉNERO
-             ===================================================== -->
-
+        <!-- Distribuye las postulaciones por género. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -281,10 +260,7 @@
         </section>
 
 
-        <!-- =====================================================
-             MES
-             ===================================================== -->
-
+        <!-- Compara el volumen de postulaciones entre meses. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -314,10 +290,7 @@
         </section>
 
 
-        <!-- =====================================================
-             SEMANA
-             ===================================================== -->
-
+        <!-- Compara las postulaciones agrupadas por semana. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -348,10 +321,7 @@
         </section>
 
 
-        <!-- =====================================================
-             SEDES
-             ===================================================== -->
-
+        <!-- Resume las postulaciones recibidas por sede. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -383,10 +353,7 @@
         </section>
 
 
-        <!-- =====================================================
-             CARGOS
-             ===================================================== -->
-
+        <!-- Resume las postulaciones según el cargo solicitado. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -416,10 +383,7 @@
         </section>
 
 
-        <!-- =====================================================
-             ESTADOS
-             ===================================================== -->
-
+        <!-- Agrupa las postulaciones por su estado actual. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -449,10 +413,7 @@
         </section>
 
 
-        <!-- =====================================================
-             SEDE + GÉNERO
-             ===================================================== -->
-
+        <!-- Compara la distribución de género dentro de cada sede. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -482,10 +443,7 @@
         </section>
 
 
-        <!-- =====================================================
-             HISTORIAL GENERAL
-             ===================================================== -->
-
+        <!-- Lista general de aspirantes y estado de sus postulaciones. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -518,10 +476,7 @@
         </section>
 
 
-        <!-- =====================================================
-             PDF
-             ===================================================== -->
-
+        <!-- Exporta a PDF las estadísticas del periodo consultado. -->
         <section class="data-table-wrap">
 
             <div class="panel-header">
@@ -555,6 +510,7 @@
 
 </div>
 
+<!-- Pie de página institucional. -->
 <footer class="site-footer">
     <div class="footer-inner">
         <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
@@ -562,6 +518,7 @@
     </div>
 </footer>
 
+<!-- Scripts para consultar los indicadores y exportar el reporte. -->
 <script src="js/reporte.js"></script>
 <script src="js/gerencia-header.js"></script>
 <script src="js/rrhh-header.js"></script>

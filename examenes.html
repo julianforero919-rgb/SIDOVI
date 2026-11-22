@@ -14,6 +14,7 @@
 
 <body>
 
+<!-- Encabezado para acceder a las secciones principales del panel. -->
 <header class="site-header">
     <div class="header-inner">
 
@@ -53,6 +54,7 @@
 
 <div class="panel-layout">
 
+    <!-- Navegación lateral de las herramientas de Recursos Humanos. -->
     <aside class="sidebar">
 
     <span class="sidebar-title">Gestión</span>
@@ -69,6 +71,7 @@
     </aside>
 
 
+    <!-- Administración de citas, resultados médicos y firmas de contrato. -->
     <main class="panel-content">
 
         <div class="panel-header">
@@ -80,9 +83,7 @@
         </div>
 
 
-        <!-- =====================================================
-             1. AGENDAR EXÁMENES
-             ===================================================== -->
+        <!-- Formulario para programar los exámenes requeridos al candidato. -->
 
         <section id="agendaSection" class="data-table-wrap">
 
@@ -236,9 +237,7 @@
         </section>
 
 
-        <!-- =====================================================
-             2. EXÁMENES PROGRAMADOS
-             ===================================================== -->
+        <!-- Tabla con citas médicas y acciones para gestionar resultados. -->
 
         <section
                 id="cargaSection"
@@ -298,9 +297,7 @@
         </section>
 
 
-        <!-- =====================================================
-             3. PRÓXIMAS FIRMAS
-             ===================================================== -->
+        <!-- Lista de candidatos aprobados que deben firmar su contrato. -->
 
         <section
                 id="firmasSection"
@@ -357,9 +354,7 @@
 </div>
 
 
-<!-- =========================================================
-     MODAL: SUBIR RESULTADO
-     ========================================================= -->
+<!-- Ventana para adjuntar y guardar el resultado de un examen. -->
 
 <div
         id="resultadoModal"
@@ -499,9 +494,7 @@
 </div>
 
 
-<!-- =========================================================
-     MODAL: VERIFICAR RESULTADO
-     ========================================================= -->
+<!-- Ventana para registrar la aprobación o rechazo del resultado médico. -->
 
 <div
         id="verificacionModal"
@@ -640,9 +633,7 @@
 </div>
 
 
-<!-- =========================================================
-     MODAL: PROGRAMAR FIRMA
-     ========================================================= -->
+<!-- Ventana para coordinar fecha, hora y lugar de firma del contrato. -->
 
 <div
         id="firmaModal"
@@ -800,6 +791,7 @@
 </div>
 
 
+<!-- Scripts para gestionar los exámenes, el encabezado y las transiciones. -->
 <script src="js/examenes.js"></script>
 <script src="js/rrhh-header.js"></script>
 

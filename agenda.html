@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/page-transition.css">
 </head>
 <body>
+<!-- Navegación superior del panel. -->
 <header class="site-header">
   <div class="header-inner">
     <div class="brand"><img src="img/logo_sidovi.png" alt="Logo SIDOVI" class="brand-logo" /></div>
@@ -25,6 +26,7 @@
 </header>
 
 <div class="panel-layout">
+  <!-- Enlaces a las secciones de gestión de Recursos Humanos. -->
   <aside class="sidebar" aria-label="Menú del panel">
     <span class="sidebar-title">Gestión</span>
     <a href="RRHH.html" class="sidebar-link">Dashboard</a>
@@ -38,13 +40,14 @@
     <a href="ofertas.html" class="sidebar-link">Ofertas públicas</a>
   </aside>
 
+  <!-- Área para programar entrevistas y consultar las ya agendadas. -->
   <main class="panel-content" aria-labelledby="agenda-title">
     <div class="panel-header">
       <h1 id="agenda-title">Agenda de Entrevistas</h1>
       <p>Programa y gestiona las entrevistas con los candidatos seleccionados.</p>
     </div>
 
-    <!-- NUEVA ENTREVISTA -->
+    <!-- Formulario para elegir candidato, horario y modalidad de entrevista. -->
     <div class="data-table-wrap sidovi-inline-2">
       <h2>Programar Nueva Entrevista</h2>
       <div class="sidovi-inline-5">
@@ -102,7 +105,7 @@
       </div>
     </div>
 
-    <!-- ENTREVISTAS PROGRAMADAS -->
+    <!-- Calendario y listado de entrevistas programadas. -->
     <div class="agenda-grid">
       <div class="calendar-mock" id="calendar" aria-label="Calendario de entrevistas">
         <div class="cal-header">
@@ -168,12 +171,14 @@
   </main>
 </div>
 
+<!-- Pie de página institucional. -->
 <footer class="site-footer">
   <div class="footer-inner">
     <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
     <p>&copy; 2026 SIDOVI · Colviseg Ltda.</p>
   </div>
 </footer>
+<!-- Scripts que administran la agenda, el encabezado y las transiciones. -->
 <script src="js/agenda.js"></script>
 <script src="js/rrhh-header.js"></script>
 <script src="js/page-transition.js"></script>

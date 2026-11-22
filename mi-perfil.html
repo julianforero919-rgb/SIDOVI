@@ -1,306 +1,240 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Mi perfil – SIDOVI</title>
 
-    <link rel="stylesheet" href="css/mi-perfil.css">
-</head>
+    <link rel="stylesheet" href="css/mi-perfil.css" />
+  </head>
 
-<body>
-
-<!-- ENCABEZADO -->
-<header class="site-header">
-    <div class="header-inner">
-
+  <body>
+    <!-- Encabezado: muestra el logo y permite volver al panel o cerrar sesión. -->
+    <header class="site-header">
+      <div class="header-inner">
         <div class="brand">
-            <img
-                    src="img/logo_sidovi.png"
-                    class="brand-logo"
-                    alt="SIDOVI"
-            >
+          <img src="img/logo_sidovi.png" class="brand-logo" alt="SIDOVI" />
         </div>
 
         <nav>
-            <ul class="nav-list">
-                <li>
-                    <a
-                            href="RRHH.html"
-                            id="volverPanel"
-                            class="nav-link"
-                    >
-                        Volver al panel
-                    </a>
-                </li>
+          <ul class="nav-list">
+            <li>
+              <a href="RRHH.html" id="volverPanel" class="nav-link">
+                Volver al panel
+              </a>
+            </li>
 
-                <li>
-                    <a
-                            href="login.html"
-                            class="nav-link nav-cta"
-                    >
-                        Cerrar sesión
-                    </a>
-                </li>
-            </ul>
+            <li>
+              <a href="login.html" class="nav-link nav-cta"> Cerrar sesión </a>
+            </li>
+          </ul>
         </nav>
 
         <button
-                class="menu-toggle"
-                id="menuToggle"
-                type="button"
-                aria-label="Abrir menú"
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menú"
         >
-            ☰
+          ☰
         </button>
+      </div>
+    </header>
 
-    </div>
-</header>
-
-
-<!-- DISTRIBUCIÓN PRINCIPAL -->
-<div class="panel-layout">
-
-    <!-- MENÚ LATERAL -->
-    <aside class="sidebar" aria-label="Menú del panel">
-
+    <!-- Diseño principal: divide la página entre el menú lateral y el perfil. -->
+    <div class="panel-layout">
+      <!-- Menú lateral: ofrece enlaces a las funciones del panel de recursos humanos. -->
+      <aside class="sidebar" aria-label="Menú del panel">
         <span class="sidebar-title">Gestión</span>
 
-        <a href="RRHH.html" class="sidebar-link">
-            Dashboard
-        </a>
+        <a href="RRHH.html" class="sidebar-link"> Dashboard </a>
 
-        <a href="postulantes.html" class="sidebar-link">
-            Postulantes
-        </a>
+        <a href="postulantes.html" class="sidebar-link"> Postulantes </a>
 
         <a
-                href="mi-perfil.html"
-                class="sidebar-link profile-sidebar-link active"
-                aria-current="page"
+          href="mi-perfil.html"
+          class="sidebar-link profile-sidebar-link active"
+          aria-current="page"
         >
-            Mi perfil
+          Mi perfil
         </a>
 
-        <a href="hojasdevida.html" class="sidebar-link">
-            Hojas de Vida
-        </a>
+        <a href="hojasdevida.html" class="sidebar-link"> Hojas de Vida </a>
 
-        <a href="agenda.html" class="sidebar-link">
-            Agenda
-        </a>
+        <a href="agenda.html" class="sidebar-link"> Agenda </a>
 
-        <a href="reporte.html" class="sidebar-link">
-            Reportes
-        </a>
+        <a href="reporte.html" class="sidebar-link"> Reportes </a>
 
-        <a href="cargos.html" class="sidebar-link">
-            Cargos y sedes
-        </a>
-
+        <a href="cargos.html" class="sidebar-link"> Cargos y sedes </a>
 
         <span class="sidebar-title">Accesos</span>
 
-        <a href="ofertas.html" class="sidebar-link">
-            Ofertas públicas
-        </a>
+        <a href="ofertas.html" class="sidebar-link"> Ofertas públicas </a>
+      </aside>
 
-    </aside>
-
-
-    <!-- CONTENIDO DEL PERFIL -->
-    <main class="panel-content profile-editor">
-
+      <!-- Contenido principal: contiene el encabezado y el formulario del perfil. -->
+      <main class="panel-content profile-editor">
         <div class="panel-header">
-            <h1>Mi perfil</h1>
+          <h1>Mi perfil</h1>
 
-            <p>
-                Actualiza tus datos y la foto que aparecerá
-                en la bienvenida.
-            </p>
+          <p>Actualiza tus datos y la foto que aparecerá en la bienvenida.</p>
         </div>
 
+        <!-- Mensajes: muestra alertas de éxito o error durante la actualización. -->
+        <div id="perfilAlert" class="form-alert" role="alert" hidden></div>
 
-        <!-- MENSAJES DEL PERFIL -->
-        <div
-                id="perfilAlert"
-                class="form-alert"
-                role="alert"
-                hidden
-        ></div>
-
-
-        <!-- TARJETA DE PERFIL -->
+        <!-- Tarjeta del perfil: agrupa la fotografía y los datos editables. -->
         <div class="profile-card">
+          <form id="perfilForm">
+            <div class="profile-hero">
+              <div id="fotoVista" class="profile-hero-photo"></div>
 
-            <form id="perfilForm">
+              <div class="profile-hero-info">
+                <h2 id="heroNombre">Mi perfil</h2>
+                <p id="heroRol"></p>
+                <p id="heroCorreo"></p>
 
-                <!-- CABECERA: FOTO ARRIBA -->
-                <div class="profile-hero">
-                    <div id="fotoVista" class="profile-hero-photo"></div>
+                <label
+                  for="fotoPerfil"
+                  class="btn btn-outline profile-photo-btn"
+                >
+                  Cambiar foto
+                </label>
+                <input
+                  id="fotoPerfil"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                />
+                <small>JPG, PNG o WEBP. Máximo 5 MB.</small>
+              </div>
+            </div>
 
-                    <div class="profile-hero-info">
-                        <h2 id="heroNombre">Mi perfil</h2>
-                        <p id="heroRol"></p>
-                        <p id="heroCorreo"></p>
+            <h3 class="profile-section-title">Datos personales</h3>
 
-                        <label for="fotoPerfil" class="btn btn-outline profile-photo-btn">
-                            Cambiar foto
-                        </label>
-                        <input id="fotoPerfil" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-                        <small>JPG, PNG o WEBP. Máximo 5 MB.</small>
-                    </div>
-                </div>
+            <div class="field">
+              <label for="nombreCompleto">Nombre completo</label>
+              <input id="nombreCompleto" required />
+            </div>
 
+            <div class="profile-grid">
+              <div class="field">
+                <label for="tipoDocumento">Tipo de documento</label>
+                <select id="tipoDocumento">
+                  <option>CC</option>
+                  <option>CE</option>
+                  <option>PASAPORTE</option>
+                </select>
+              </div>
 
-                <h3 class="profile-section-title">Datos personales</h3>
+              <div class="field">
+                <label for="numeroDocumento">Número de documento</label>
+                <input id="numeroDocumento" />
+              </div>
 
-                <div class="field">
-                    <label for="nombreCompleto">Nombre completo</label>
-                    <input id="nombreCompleto" required>
-                </div>
+              <div class="field">
+                <label for="fechaNacimiento">Fecha de nacimiento</label>
+                <input id="fechaNacimiento" type="date" />
+              </div>
 
-                <div class="profile-grid">
-                    <div class="field">
-                        <label for="tipoDocumento">Tipo de documento</label>
-                        <select id="tipoDocumento">
-                            <option>CC</option>
-                            <option>CE</option>
-                            <option>PASAPORTE</option>
-                        </select>
-                    </div>
+              <div class="field">
+                <label for="sexo">Género</label>
+                <select id="sexo">
+                  <option value="">Selecciona una opción</option>
+                  <option value="Hombre">Hombre</option>
+                  <option value="Mujer">Mujer</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
 
-                    <div class="field">
-                        <label for="numeroDocumento">Número de documento</label>
-                        <input id="numeroDocumento">
-                    </div>
+            <h3 class="profile-section-title">Contacto</h3>
 
-                    <div class="field">
-                        <label for="fechaNacimiento">Fecha de nacimiento</label>
-                        <input id="fechaNacimiento" type="date">
-                    </div>
+            <div class="profile-grid">
+              <div class="field">
+                <label for="telefono">Teléfono</label>
+                <input id="telefono" />
+              </div>
 
-                    <div class="field">
-                        <label for="sexo">Género</label>
-                        <select id="sexo">
-                            <option value="">Selecciona una opción</option>
-                            <option value="Hombre">Hombre</option>
-                            <option value="Mujer">Mujer</option>
-                            <option value="Otro">Otro</option>
-                        </select>
-                    </div>
-                </div>
+              <div class="field">
+                <label for="ciudad">Ciudad</label>
+                <input id="ciudad" />
+              </div>
 
+              <div class="field">
+                <label for="direccion">Dirección</label>
+                <input id="direccion" />
+              </div>
+            </div>
 
-                <h3 class="profile-section-title">Contacto</h3>
+            <h3 class="profile-section-title">Información laboral</h3>
 
-                <div class="profile-grid">
-                    <div class="field">
-                        <label for="telefono">Teléfono</label>
-                        <input id="telefono">
-                    </div>
+            <div class="profile-grid">
+              <div class="field">
+                <label for="cargo">Cargo</label>
+                <input id="cargo" placeholder="Gerente / Recursos Humanos" />
+              </div>
 
-                    <div class="field">
-                        <label for="ciudad">Ciudad</label>
-                        <input id="ciudad">
-                    </div>
+              <div class="field">
+                <label for="area">Área o dependencia</label>
+                <input id="area" placeholder="Ej. Gestión Humana" />
+              </div>
 
-                    <div class="field">
-                        <label for="direccion">Dirección</label>
-                        <input id="direccion">
-                    </div>
-                </div>
+              <div class="field">
+                <label for="fechaIngreso">Fecha de ingreso</label>
+                <input id="fechaIngreso" type="date" />
+              </div>
+            </div>
 
+            <h3 class="profile-section-title">Contacto de emergencia</h3>
 
-                <h3 class="profile-section-title">Información laboral</h3>
+            <div class="profile-grid">
+              <div class="field">
+                <label for="contactoEmergencia">Nombre del contacto</label>
+                <input id="contactoEmergencia" />
+              </div>
 
-                <div class="profile-grid">
-                    <div class="field">
-                        <label for="cargo">Cargo</label>
-                        <input id="cargo" placeholder="Gerente / Recursos Humanos">
-                    </div>
+              <div class="field">
+                <label for="telefonoEmergencia">Teléfono del contacto</label>
+                <input id="telefonoEmergencia" />
+              </div>
+            </div>
 
-                    <div class="field">
-                        <label for="area">Área o dependencia</label>
-                        <input id="area" placeholder="Ej. Gestión Humana">
-                    </div>
+            <h3 class="profile-section-title">Sobre mí</h3>
 
-                    <div class="field">
-                        <label for="fechaIngreso">Fecha de ingreso</label>
-                        <input id="fechaIngreso" type="date">
-                    </div>
-                </div>
+            <div class="field">
+              <label for="descripcion">Descripción breve</label>
+              <textarea
+                id="descripcion"
+                rows="3"
+                maxlength="500"
+                placeholder="Cuéntanos brevemente sobre tu experiencia y funciones."
+              ></textarea>
+            </div>
 
-
-                <h3 class="profile-section-title">Contacto de emergencia</h3>
-
-                <div class="profile-grid">
-                    <div class="field">
-                        <label for="contactoEmergencia">Nombre del contacto</label>
-                        <input id="contactoEmergencia">
-                    </div>
-
-                    <div class="field">
-                        <label for="telefonoEmergencia">Teléfono del contacto</label>
-                        <input id="telefonoEmergencia">
-                    </div>
-                </div>
-
-
-                <h3 class="profile-section-title">Sobre mí</h3>
-
-                <div class="field">
-                    <label for="descripcion">Descripción breve</label>
-                    <textarea id="descripcion" rows="3" maxlength="500"
-                              placeholder="Cuéntanos brevemente sobre tu experiencia y funciones."></textarea>
-                </div>
-
-
-                <button class="btn btn-primary" type="submit">
-                    Guardar perfil
-                </button>
-
-            </form>
-
+            <button class="btn btn-primary" type="submit">
+              Guardar perfil
+            </button>
+          </form>
         </div>
 
-        <!--
-            El archivo cambiar-clave.js agrega aquí,
-            automáticamente, la tarjeta para cambiar
-            la contraseña.
-        -->
-
-    </main>
-
-</div>
-
-
-<!-- PIE DE PÁGINA -->
-<footer class="site-footer">
-
-    <div class="footer-inner">
-
-        <img
-                src="img/logo_sidovi.png"
-                alt="SIDOVI"
-                class="footer-logo"
-        >
-
-        <p>
-            &copy; 2026 SIDOVI · Colviseg Ltda.
-        </p>
-
+        <!-- El archivo cambiar-clave.js agrega aquí la tarjeta para cambiar la contraseña. -->
+      </main>
     </div>
 
-</footer>
+    <!-- Pie de página: muestra el logotipo y los derechos de SIDOVI. -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <img src="img/logo_sidovi.png" alt="SIDOVI" class="footer-logo" />
 
+        <p>&copy; 2026 SIDOVI · Colviseg Ltda.</p>
+      </div>
+    </footer>
 
-<!-- SCRIPTS -->
-<script src="js/mi-perfil.js"></script>
-<script src="js/rrhh-header.js"></script>
-<script src="js/page-transition.js"></script>
-
-</body>
+    <!-- Scripts: cargan la edición, el encabezado y las transiciones del perfil. -->
+    <script src="js/mi-perfil.js"></script>
+    <script src="js/rrhh-header.js"></script>
+    <script src="js/page-transition.js"></script>
+  </body>
 </html>

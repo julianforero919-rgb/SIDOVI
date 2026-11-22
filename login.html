@@ -9,6 +9,7 @@
 </head>
 <body class="login-page">
 
+  <!-- Navegación pública de acceso a ofertas y postulaciones. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
@@ -25,6 +26,7 @@
     </div>
   </header>
 
+  <!-- Formulario de autenticación y estados de respuesta del acceso. -->
   <main class="login-main">
     <section class="login-section" aria-labelledby="login-title">
       <div class="login-card">
@@ -68,7 +70,7 @@
           <p class="login-back"><a href="index.html">← Volver al inicio</a></p>
         </div>
 
-        <!-- ACCESO DENEGADO -->
+        <!-- Aviso que aparece si las credenciales no son válidas. -->
         <div class="login-denied" id="loginDenied" hidden>
           <div class="denied-icon">🔒</div>
           <h2>Acceso Denegado</h2>
@@ -76,7 +78,7 @@
           <button type="button" class="btn btn-outline" id="btnRetry">Intentar de Nuevo</button>
         </div>
 
-        <!-- ACCESO CONCEDIDO -->
+        <!-- Confirmación visible al validar el acceso correctamente. -->
         <div class="login-success" id="loginSuccess" hidden>
           <h2>Bienvenido al Sistema</h2>
         </div>
@@ -85,6 +87,7 @@
     </section>
   </main>
 
+  <!-- Pie de página institucional. -->
   <footer class="site-footer">
     <div class="footer-inner">
       <img src="img/logo_sidovi.png" class="footer-logo" />
@@ -92,6 +95,7 @@
     </div>
   </footer>
 
+  <!-- Scripts para validar el acceso y controlar las transiciones. -->
   <script src="js/login.js"></script>
   <script src="js/page-transition.js"></script>
 </body>
