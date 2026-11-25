@@ -1,0 +1,190 @@
+
+/* =========================================
+   BARRA DE ACCESIBILIDAD - SIDOVI
+   ========================================= */
+
+:root {
+    --accesibilidad-azul: #020621;
+    --accesibilidad-vino: #800020;
+    --accesibilidad-blanco: #ffffff;
+}
+
+/* Botón flotante */
+.accesibilidad-boton {
+    position: fixed;
+    left: 22px;
+    bottom: 22px;
+    z-index: 9998;
+    width: 54px;
+    height: 54px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: var(--accesibilidad-azul);
+    color: #ffffff;
+    font-size: 27px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.accesibilidad-boton:hover {
+    background: var(--accesibilidad-vino);
+    transform: scale(1.06);
+}
+
+.accesibilidad-boton:focus-visible,
+.accesibilidad-panel button:focus-visible {
+    outline: 3px solid #f2c94c;
+    outline-offset: 3px;
+}
+
+/* Panel */
+.accesibilidad-panel {
+    position: fixed;
+    left: 22px;
+    bottom: 88px;
+    z-index: 9999;
+    width: min(310px, calc(100vw - 32px));
+    padding: 20px;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #172033;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.24);
+    border-top: 5px solid var(--accesibilidad-vino);
+    font-family: Arial, sans-serif;
+}
+
+.accesibilidad-panel[hidden] {
+    display: none !important;
+}
+
+.accesibilidad-panel h2 {
+    margin: 0 0 7px;
+    color: var(--accesibilidad-azul);
+    font-size: 19px;
+}
+
+.accesibilidad-descripcion {
+    margin: 0 0 16px;
+    color: #4b5563;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.accesibilidad-acciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+.accesibilidad-panel button {
+    min-height: 42px;
+    padding: 9px 10px;
+    border: 1px solid #d5d9e2;
+    border-radius: 8px;
+    background: #f4f6fa;
+    color: #172033;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.accesibilidad-panel button:hover {
+    background: #e5e9f1;
+}
+
+.accesibilidad-panel button[aria-pressed="true"] {
+    background: var(--accesibilidad-azul);
+    border-color: var(--accesibilidad-azul);
+    color: #ffffff;
+}
+
+.accesibilidad-panel .accesibilidad-restablecer {
+    grid-column: 1 / -1;
+    background: var(--accesibilidad-vino);
+    border-color: var(--accesibilidad-vino);
+    color: #ffffff;
+}
+
+.accesibilidad-panel .accesibilidad-restablecer:hover {
+    background: #5f0018;
+}
+
+/* Tamaño de texto */
+body.accesibilidad-texto-aumentado {
+    font-size: 1.12em;
+}
+
+body.accesibilidad-texto-aumentado p,
+body.accesibilidad-texto-aumentado li,
+body.accesibilidad-texto-aumentado label,
+body.accesibilidad-texto-aumentado input,
+body.accesibilidad-texto-aumentado select,
+body.accesibilidad-texto-aumentado textarea,
+body.accesibilidad-texto-aumentado button {
+    font-size: 1.08em;
+}
+
+body.accesibilidad-texto-reducido {
+    font-size: 0.92em;
+}
+
+/* Alto contraste */
+body.accesibilidad-alto-contraste {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+body.accesibilidad-alto-contraste main,
+body.accesibilidad-alto-contraste section,
+body.accesibilidad-alto-contraste article,
+body.accesibilidad-alto-contraste form,
+body.accesibilidad-alto-contraste .card {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #ffff00 !important;
+}
+
+body.accesibilidad-alto-contraste p,
+body.accesibilidad-alto-contraste h1,
+body.accesibilidad-alto-contraste h2,
+body.accesibilidad-alto-contraste h3,
+body.accesibilidad-alto-contraste label,
+body.accesibilidad-alto-contraste span {
+    color: #ffffff !important;
+}
+
+body.accesibilidad-alto-contraste input,
+body.accesibilidad-alto-contraste select,
+body.accesibilidad-alto-contraste textarea {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffff00 !important;
+}
+
+/* Resaltar enlaces */
+body.accesibilidad-enlaces-resaltados a {
+    outline: 2px solid #ffcc00 !important;
+    outline-offset: 3px !important;
+    text-decoration: underline !important;
+    font-weight: bold !important;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 480px) {
+    .accesibilidad-boton {
+        left: 15px;
+        bottom: 15px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .accesibilidad-panel {
+        left: 15px;
+        bottom: 77px;
+    }
+}

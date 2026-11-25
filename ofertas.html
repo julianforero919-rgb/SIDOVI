@@ -6,6 +6,7 @@
   <title>Ofertas Laborales – SIDOVI</title>
   <link rel="stylesheet" href="css/ofertas.css">
   <link rel="stylesheet" href="css/page-transition.css">
+  <link rel="stylesheet" href="css/accesibilidad.css">
 </head>
 <body>
 
@@ -123,17 +124,36 @@
   <script src="js/nav.js"></script>
   <script src="js/ofertas.js"></script>
   <!-- Asistente virtual para responder consultas de los visitantes. -->
-<button id="chatbotButton" class="chatbot-button" type="button" aria-label="Abrir chatbot SIDOVI" title="Abrir chatbot">💬</button>
+<button id="chatbotButton" class="chatbot-button" type="button" aria-label="Abrir chatbot SIDOVI" title="Abrir chatbot">🛡️</button>
 <section id="chatbotContainer" class="chatbot-container" aria-label="Chatbot SIDOVI">
   <header class="chatbot-header">
     <div class="bot-information">
-      <div class="bot-avatar" aria-hidden="true">🤖</div>
+      <div class="bot-avatar" aria-hidden="true">👮‍♂️</div>
       <div>
         <h3>Asistente SIDOVI</h3>
         <span>En línea</span>
       </div>
     </div>
-    <button id="closeChat" class="close-chat" type="button" aria-label="Cerrar chatbot">×</button>
+    <div class="header-actions">
+  <button id="speakButton" class="header-button" type="button"
+          aria-label="Activar o desactivar la voz"
+          aria-pressed="false" title="Activar voz">
+    <svg class="icon-off" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+      <line x1="23" y1="9" x2="17" y2="15"/>
+      <line x1="17" y1="9" x2="23" y2="15"/>
+    </svg>
+    <svg class="icon-on" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+      <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+      <path d="M19 5a10 10 0 0 1 0 14"/>
+    </svg>
+  </button>
+  <button id="closeChat" class="close-chat" type="button"
+          aria-label="Cerrar chatbot">&times;</button>
+</div>
   </header>
   <div id="chatMessages" class="chatbot-messages" aria-live="polite">
     <div class="message bot-message">
@@ -142,18 +162,38 @@
   </div>
 
   <div class="chat-input-container">
-    <div class="input-top">
-      <input id="chatInput" type="text" placeholder="Escribe tu mensaje..." aria-label="Mensaje">
-    </div>
-    <div class="input-bottom">
-      <button id="emojiButton" class="input-button" type="button" aria-label="Agregar emoji">😊</button>
-      <button id="sendButton" class="send-button" type="button" aria-label="Enviar mensaje">➤</button>
-    </div>
+  <div class="input-row">
+    <input id="chatInput" type="text"
+           placeholder="Escribe tu mensaje..."
+           aria-label="Mensaje" autocomplete="off">
+
+    <button id="micButton" class="mic-button" type="button"
+            aria-label="Dictar mensaje por voz" title="Hablar">
+      <svg viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 11a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="18" x2="12" y2="22"/>
+      </svg>
+    </button>
+
+    <button id="sendButton" class="send-button" type="button"
+            aria-label="Enviar mensaje" title="Enviar">
+      <svg viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
   </div>
-</section>
+  <p class="chat-footnote">Asistente automático · Colviseg Ltda.</p>
+</div></section>
 
 <link rel="stylesheet" href="css/chatbot.css">
 <script src="js/chatbot.js"></script>
   <script src="js/page-transition.js"></script>
+  <script src="js/accesibilidad.js"></script>
 </body>
 </html>

@@ -80,7 +80,7 @@ function requireRoles(...roles) {
     next();
   };
 }
-const publicApi = (req) => req.path === '/auth/login' || req.path === '/health' || (req.path === '/vacantes' && req.method === 'GET') || (req.path === '/sedes' && req.method === 'GET') || (req.path === '/postulaciones' && req.method === 'POST');
+const publicApi = (req) => req.path === '/auth/login' || req.path === '/health' || (['/vacantes', '/vacantes-publicas'].includes(req.path) && req.method === 'GET') || (req.path === '/sedes' && req.method === 'GET') || (req.path === '/postulaciones' && req.method === 'POST');
 const protectedPages = {
   '/RRHH.html': ['RRHH'],
   '/cargos.html': ['RRHH'],
@@ -180,6 +180,39 @@ app.get('/api/vacantes', async (req, res) => {
     const result = await db.query(`SELECT v.*, v.nombre_cargo AS titulo, s.nombre_sede, c.id_cargo, c.nombre_cargo, u.nombre_completo AS responsable, COUNT(p.id_postulacion)::int AS total_postulaciones FROM vacante v LEFT JOIN sede s ON s.id_sede = v.id_sede LEFT JOIN cargo c ON c.id_cargo = v.id_cargo LEFT JOIN usuario u ON u.id_usuario = v.id_usuario LEFT JOIN postulacion p ON p.id_vacante = v.id_vacante ${clause} GROUP BY v.id_vacante, s.nombre_sede, c.id_cargo, c.nombre_cargo, u.nombre_completo ORDER BY v.id_vacante DESC`, values);
     res.json(result.rows);
   } catch (error) { errorResponse(res, error, 'No fue posible consultar las vacantes. Ejecuta primero la migración de sedes y cargos.'); }
+});
+
+app.get('/api/vacantes-publicas', async (_req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        v.id_vacante,
+        COALESCE(
+          NULLIF(v.nombre_cargo, ''),
+          c.nombre_cargo,
+          'Vacante disponible'
+        ) AS nombre_cargo,
+        COALESCE(s.nombre_sede, 'Sede no especificada') AS nombre_sede,
+        COALESCE(v.descripcion, '') AS descripcion,
+        COALESCE(v.requisitos, '') AS requisitos,
+        COALESCE(c.descripcion_cargo, '') AS descripcion_cargo,
+        COALESCE(c.turnos, '') AS turnos,
+        v.fecha_publicacion
+      FROM vacante v
+      LEFT JOIN sede s ON s.id_sede = v.id_sede
+      LEFT JOIN cargo c ON c.id_cargo = v.id_cargo
+      WHERE LOWER(TRIM(v.estado)) IN ('abierta', 'activo', 'activa')
+      ORDER BY v.fecha_publicacion DESC, v.id_vacante DESC
+    `);
+
+    res.set('Cache-Control', 'no-store');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error consultando vacantes públicas:', error);
+    res.status(500).json({
+      error: 'No fue posible consultar las vacantes disponibles.'
+    });
+  }
 });
 
 app.get('/api/vacantes/:id', async (req, res) => {
