@@ -261,6 +261,7 @@ app.post('/api/vacantes', async (req, res) => {
   } catch (error) {
     errorResponse(res, error, 'No fue posible crear la vacante.');
   }
+});
 
 
 app.patch('/api/vacantes/:id', async (req, res) => {
