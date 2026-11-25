@@ -88,7 +88,6 @@ const protectedPages = {
   '/evaluar.html': ['Gerente'],
   '/evaluacion.html': ['Gerente'],
   '/contrato.html': ['Gerente'],
-  '/trabajadores.html': ['RRHH', 'Gerente'],
   '/reporte.html': ['RRHH', 'Gerente'],
   '/aspirantes.html': ['RRHH', 'Gerente'],
   '/agenda.html': ['RRHH', 'Gerente'],
@@ -1381,6 +1380,11 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
       estado,
       observaciones
     ]);
+
+    await db.query(
+        `UPDATE postulacion SET estado = 'CONTRATADO' WHERE id_postulacion = $1`,
+        [idPostulacion]
+    );
 
     res.status(201).json({
       ...result.rows[0],
