@@ -1,304 +1,477 @@
-/* Define los estilos generales del asistente SIDOVI. */
-* {
+/* Asistente SIDOVI: usa la paleta de la página (azul marino, rojo Colviseg y grises claros). */
+.chatbot-button,
+.chatbot-container,
+.chatbot-container * {
   box-sizing: border-box;
 }
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+
+.chatbot-container {
+  --cb-navy: #020621;
+  --cb-navy-2: #0b1a3a;
+  --cb-red: #800020;
+  --cb-red-hover: #a31535;
+  --cb-bg: #f4f6fa;
+  --cb-border: #dde3ed;
+  --cb-text: #1f2937;
+  --cb-muted: #6b7280;
+  font-family: "Barlow", Arial, Helvetica, sans-serif;
 }
-/* Diseña el botón circular que abre el chatbot. */
+
+/* Botón flotante que abre el chat. */
 .chatbot-button {
   position: fixed;
   right: 25px;
   bottom: 25px;
-  width: 65px;
-  height: 65px;
-  border: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 3px solid #ffffff;
   border-radius: 50%;
-  background: #d71920;
-  color: white;
-  font-size: 30px;
+  background: #020621;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 22px rgba(2, 6, 33, 0.35);
   z-index: 9999;
-  transition: 0.3s;
+  transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.chatbot-button svg {
+  width: 28px;
+  height: 28px;
+}
+
+.chatbot-button::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: 	#800020;
+  border: 2px solid #ffffff;
 }
 
 .chatbot-button:hover {
   transform: scale(1.08);
+  background: #0b1a3a;
+  box-shadow: 0 8px 26px rgba(128, 0, 32, 0.35);
 }
-/* Crea el contenedor flotante del chat. */
 
+.chatbot-button:focus-visible,
+.chatbot-container button:focus-visible {
+  outline: 3px solid rgba(128, 0, 32, 0.55);
+  outline-offset: 2px;
+}
+
+/* Ventana del chat. */
 .chatbot-container {
   position: fixed;
   right: 25px;
   bottom: 25px;
-  width: 360px;
-  height: 570px;
+  width: 370px;
+  height: 580px;
   background: #ffffff;
-  border-radius: 20px;
+  border: 1px solid var(--cb-border);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 40px rgba(2, 6, 33, 0.28);
   display: none;
   flex-direction: column;
   z-index: 10000;
 }
 
-/* Muestra el contenedor cuando el chatbot está activo. */
 .chatbot-container.active {
   display: flex;
+  animation: chatbotOpen 0.25s ease;
 }
-/* Diseña el encabezado del asistente. */
 
-.chatbot-header {
-  height: 90px;
-  background: #182333;
-  color: white;
+@keyframes chatbotOpen {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Encabezado: azul marino con filo rojo, igual que la identidad del sitio. */
+.chatbot-container .chatbot-header {
+  height: auto;
+  min-height: 74px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, var(--cb-navy) 0%, var(--cb-navy-2) 100%);
+  border-bottom: 4px solid var(--cb-red);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 15px;
+  gap: 8px;
 }
 
-/* Organiza el nombre y la descripción del asistente. */
-
-.bot-information {
+.chatbot-container .bot-information {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
-/* Define la imagen circular del asistente. */
-
-.bot-avatar {
-  width: 62px;
-  height: 62px;
+.chatbot-container .bot-avatar {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
   border-radius: 50%;
-  background: #7dd9f4;
+  background: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
-  border: 3px solid white;
+  overflow: hidden;
+  font-size: 26px;
+  font-size: 28px;
 }
-/* Da formato al nombre del chatbot. */
 
-.bot-information h3 {
+.chatbot-container .bot-avatar img {
+  width: 30px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.chatbot-container .bot-information h3 {
   margin: 0;
-  font-size: 19px;
+  font-family: "Barlow Condensed", "Barlow", Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  color: #ffffff;
 }
 
-/* Da formato al texto descriptivo del chatbot. */
-
-.bot-information span {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #e1e1e1;
+.chatbot-container .bot-information span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.78);
 }
 
-/* Diseña el botón para cerrar el chat. */
+.chatbot-container .bot-information span::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+}
 
-.close-chat {
+.chatbot-container .bot-information span.speaking::before {
+  background: #800020;
+  animation: botPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes botPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.6); opacity: 0.55; }
+}
+
+.chatbot-container .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.chatbot-container .header-button,
+.chatbot-container .close-chat {
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border: none;
+  border-radius: 50%;
   background: transparent;
-  color: white;
-  font-size: 27px;
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-/* Define el espacio donde aparecen los mensajes. */
+.chatbot-container .header-button svg {
+  width: 20px;
+  height: 20px;
+}
 
-.chatbot-messages {
+.chatbot-container .header-button:hover,
+.chatbot-container .close-chat:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.chatbot-container .header-button.on {
+  background: var(--cb-red);
+  color: #ffffff;
+}
+
+.chatbot-container .header-button .icon-off { display: block; }
+.chatbot-container .header-button .icon-on  { display: none; }
+.chatbot-container .header-button.on .icon-off { display: none; }
+.chatbot-container .header-button.on .icon-on  { display: block; }
+
+/* Zona de mensajes. */
+.chatbot-container .chatbot-messages {
   flex: 1;
-  padding: 18px;
+  padding: 16px;
   overflow-y: auto;
-  background: linear-gradient(
-    135deg,
-    rgba(235, 248, 255, 0.95),
-    rgba(248, 252, 255, 0.95)
-  );
+  background: var(--cb-bg);
 }
 
-/* Personaliza la barra de desplazamiento de mensajes. */
-
-.chatbot-messages::-webkit-scrollbar {
-  width: 5px;
+.chatbot-container .chatbot-messages::-webkit-scrollbar {
+  width: 6px;
 }
 
-.chatbot-messages::-webkit-scrollbar-thumb {
-  background: #aaa;
+.chatbot-container .chatbot-messages::-webkit-scrollbar-thumb {
+  background: #c3cbd9;
   border-radius: 10px;
 }
 
-/* Define la presentación general de los mensajes. */
-
-.message {
-  max-width: 82%;
-  padding: 12px 16px;
-  margin-bottom: 13px;
-  border-radius: 18px;
-  font-size: 14px;
-  line-height: 1.4;
+.chatbot-container .message {
+  width: fit-content;
+  max-width: 84%;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+  border-radius: 16px;
+  font-size: 14.5px;
+  line-height: 1.45;
   animation: messageAppear 0.25s ease;
 }
 
-.message p {
+.chatbot-container .message p {
   margin: 0;
 }
 
-/* Da estilo a los mensajes enviados por el asistente. */
-
-.bot-message {
-  background: #a9a9a9;
-  color: white;
-  border-bottom-left-radius: 5px;
+.chatbot-container .bot-message {
+  background: #ffffff;
+  color: var(--cb-text);
+  border: 1px solid var(--cb-border);
+  border-left: 3px solid var(--cb-red);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(2, 6, 33, 0.08);
   margin-right: auto;
+  margin-left: 0;
 }
 
-.chatbot-contact-link {
-  display: inline-block;
+.chatbot-container .user-message {
+  background: linear-gradient(135deg, var(--cb-navy-2), var(--cb-navy));
   color: #ffffff;
-  font-weight: 700;
-  text-decoration: underline;
-}
-
-.chatbot-contact-link:hover {
-  color: #ffffff;
-}
-
-/* Da estilo a los mensajes enviados por el usuario. */
-.user-message {
-  background: #d71920;
-  color: white;
-  border-bottom-right-radius: 5px;
+  border-bottom-right-radius: 4px;
+  box-shadow: none;
   margin-left: auto;
+  margin-right: 0;
 }
 
-/* Define la aparición animada de los mensajes. */
+.chatbot-container .chatbot-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--cb-red);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.chatbot-container .chatbot-contact-link:hover {
+  background: var(--cb-red-hover);
+  color: #ffffff;
+}
+
+/* Indicador "escribiendo...". */
+.chatbot-container .typing {
+  display: flex;
+  gap: 4px;
+  padding: 13px 16px;
+}
+
+.chatbot-container .typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa5b8;
+  animation: typingDot 1s infinite ease-in-out;
+}
+
+.chatbot-container .typing i:nth-child(2) { animation-delay: 0.15s; }
+.chatbot-container .typing i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
 
 @keyframes messageAppear {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Diseña los controles de valoración del servicio. */
+/* Preguntas rápidas. */
+.chatbot-container .quick-replies {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 2px;
+  overflow-x: auto;
+  background: var(--cb-bg);
+  border-top: 1px solid var(--cb-border);
+  scrollbar-width: none;
+}
 
-.chat-rating {
+.chatbot-container .quick-replies::-webkit-scrollbar { display: none; }
+
+.chatbot-container .quick-replies button {
+  flex: 0 0 auto;
+  padding: 6px 13px;
+  border: 1px solid var(--cb-navy-2);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--cb-navy-2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.chatbot-container .quick-replies button:hover {
+  background: var(--cb-red);
+  border-color: var(--cb-red);
+  color: #ffffff;
+}
+
+/* Campo de escritura. */
+.chatbot-container .chat-input-container {
+  margin: 0;
+  padding: 10px 12px 12px;
+  background: var(--cb-bg);
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.chatbot-container .input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 14px;
+  background: #ffffff;
+  border: 1.5px solid var(--cb-border);
+  border-radius: 999px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatbot-container .input-row:focus-within {
+  border-color: var(--cb-navy-2);
+  box-shadow: 0 0 0 3px rgba(11, 26, 58, 0.12);
+}
+
+.chatbot-container .input-row input,
+.chatbot-container .input-row input:focus {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--cb-text);
+  padding: 8px 0;
+}
+
+.chatbot-container .input-row input::placeholder {
+  color: #9aa3b2;
+}
+
+.chatbot-container .mic-button,
+.chatbot-container .send-button {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px;
-  background: #edf6ff;
-  font-size: 12px;
-  color: #555;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
-.chat-rating button {
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 50%;
-  background: white;
-  font-size: 17px;
-  cursor: pointer;
-  transition: 0.2s;
+.chatbot-container .mic-button svg,
+.chatbot-container .send-button svg {
+  width: 19px;
+  height: 19px;
 }
 
-.chat-rating button:hover {
-  transform: scale(1.12);
-  background: #e3e3e3;
-}
-
-/* Organiza el área para escribir mensajes. */
-
-.chat-input-container {
-  margin: 8px;
-  border: 2px solid #111;
-  border-radius: 14px;
-  background: white;
-  overflow: hidden;
-}
-
-/* Da estilo al campo de entrada del chat. */
-
-.input-top {
-  padding: 5px 10px;
-}
-
-.input-top input {
-  width: 100%;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  padding: 7px;
-  color: #333;
-}
-
-.input-top input::placeholder {
-  color: #999;
-}
-
-/* Agrupa los botones disponibles junto al campo. */
-
-.input-bottom {
-  display: flex;
-  align-items: center;
-  padding: 3px 7px 7px;
-}
-
-.input-button {
-  border: none;
+.chatbot-container .mic-button {
   background: transparent;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px;
+  color: var(--cb-navy-2);
 }
 
-.attachment-button {
-  cursor: pointer;
+.chatbot-container .mic-button:hover {
+  background: #e9edf5;
 }
 
-/* Diseña el botón que envía los mensajes. */
-
-.send-button {
-  margin-left: auto;
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: #d71920;
-  font-size: 28px;
-  cursor: pointer;
-  transition: 0.2s;
+.chatbot-container .mic-button.listening {
+  background: var(--cb-red);
+  color: #ffffff;
+  animation: botPulse 1s ease-in-out infinite;
 }
 
-.send-button:hover {
-  transform: scale(1.1);
+.chatbot-container .send-button {
+  background: var(--cb-red);
+  color: #ffffff;
+  font-size: 0;
 }
 
-/* Adapta los diseños a pantallas pequeñas. */
+.chatbot-container .send-button:hover {
+  background: var(--cb-red-hover);
+  transform: scale(1.06);
+}
 
+.chatbot-container .chat-footnote {
+  margin: 7px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--cb-muted);
+}
+
+/* Pantallas pequeñas. */
 @media (max-width: 500px) {
   .chatbot-container {
     width: calc(100% - 20px);
     height: calc(100vh - 30px);
     right: 10px;
     bottom: 10px;
-    border-radius: 18px;
+    border-radius: 16px;
   }
+
   .chatbot-button {
     right: 18px;
     bottom: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatbot-container *,
+  .chatbot-button {
+    animation: none !important;
+    transition: none !important;
   }
 }
