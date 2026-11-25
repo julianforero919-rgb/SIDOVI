@@ -188,11 +188,80 @@ app.get('/api/vacantes/:id', async (req, res) => {
 });
 
 app.post('/api/vacantes', async (req, res) => {
-  const { titulo, descripcion, requisitos = '', fechaPublicacion = new Date(), estado = 'ABIERTA', idUsuario = 2, idSede, id_sede, idCargo, id_cargo } = req.body;
-  if (!titulo || !descripcion) return res.status(400).json({ error: 'Título y descripción son obligatorios.' });
-  try { const result = await db.query(`INSERT INTO vacante (titulo, descripcion, requisitos, fecha_publicacion, estado, id_usuario, id_sede, id_cargo) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`, [titulo, descripcion, requisitos, fechaPublicacion, estado, idUsuario, idSede || id_sede || null, idCargo || id_cargo || null]); res.status(201).json(result.rows[0]); }
-  catch (error) { errorResponse(res, error, 'No fue posible crear la vacante.'); }
-});
+
+  const {
+    titulo,
+    descripcion,
+    requisitos = '',
+    fechaPublicacion = new Date(),
+    estado = 'ABIERTA',
+    idUsuario = 2,
+    idSede,
+    id_sede,
+    idCargo,
+    id_cargo
+  } = req.body;
+
+  if (!titulo || !descripcion) {
+    return res.status(400).json({
+      error: 'Título y descripción son obligatorios.'
+    });
+  }
+
+  try {
+    const cargoId = idCargo || id_cargo;
+
+    if (!cargoId) {
+      return res.status(400).json({
+        error: 'El cargo es obligatorio.'
+      });
+    }
+
+    const cargoResult = await db.query(
+      'SELECT nombre_cargo FROM cargo WHERE id_cargo = $1',
+      [cargoId]
+    );
+
+    if (!cargoResult.rowCount) {
+      return res.status(400).json({
+        error: 'El cargo seleccionado no existe.'
+      });
+    }
+
+    const nombreCargo = cargoResult.rows[0].nombre_cargo;
+
+    const result = await db.query(`
+      INSERT INTO vacante (
+        titulo,
+        nombre_cargo,
+        descripcion,
+        requisitos,
+        fecha_publicacion,
+        estado,
+        id_usuario,
+        id_sede,
+        id_cargo
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *
+    `, [
+      titulo,
+      nombreCargo,
+      descripcion,
+      requisitos,
+      fechaPublicacion,
+      estado,
+      idUsuario,
+      idSede || id_sede || null,
+      cargoId
+    ]);
+
+    res.status(201).json(result.rows[0]);
+
+  } catch (error) {
+    errorResponse(res, error, 'No fue posible crear la vacante.');
+  }
+
 
 app.patch('/api/vacantes/:id', async (req, res) => {
   const { titulo, descripcion, requisitos = '', fechaPublicacion, estado, idUsuario, idSede, id_sede, idCargo, id_cargo } = req.body;

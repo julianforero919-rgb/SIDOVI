@@ -5,8 +5,11 @@
     "start": "node server.js",
     "dev": "node server.js",
     "check": "node --check server.js",
-    "test": "vitest run"
-  },
+    "test": "vitest run",
+    "test:jest": "jest --runInBand --config jest.config.js",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+},
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
@@ -17,5 +20,23 @@
     "pdfkit": "^0.20.2",
     "pg": "^8.23.0",
     "vitest": "^2.1.4"
-  }
+  },
+  "description": "SIDOVI conserva sus páginas HTML, estilos, imágenes, scripts del navegador, botones y rutas visibles. La actualización se limita al backend, las consultas SQL, las claves foráneas, las vistas y la conexión con PostgreSQL.",
+  "main": "server.js",
+  "devDependencies": {
+    "cypress": "^16.2.1",
+    "jest": "^30.5.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julianforero919-rgb/SIDOVI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/julianforero919-rgb/SIDOVI/issues"
+  },
+  "homepage": "https://github.com/julianforero919-rgb/SIDOVI#readme"
 }
