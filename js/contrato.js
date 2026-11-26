@@ -421,69 +421,58 @@ function resetForm() {
 // CARGAR POSTULACIONES PRÓXIMAS A CONTRATO
 // ============================================================
 
+
 async function cargarPostulaciones() {
-
     try {
+        const resultados = await Promise.all([
+            api('/api/postulaciones?estado=PENDIENTE_CONTRATO'),
+            api('/api/postulaciones?estado=FIRMA_CONTRATO_AGENDADA'),
+            api('/api/contratos')
+        ]);
 
-        const resultados =
-            await Promise.all([
+        const pendientes = Array.isArray(resultados[0])
+            ? resultados[0]
+            : (resultados[0]?.postulaciones || []);
 
-                api(
-                    '/api/postulaciones?estado=PENDIENTE_CONTRATO'
-                ),
+        const firmas = Array.isArray(resultados[1])
+            ? resultados[1]
+            : (resultados[1]?.postulaciones || []);
 
-                api(
-                    '/api/postulaciones?estado=FIRMA_CONTRATO_AGENDADA'
-                )
+        contratos = Array.isArray(resultados[2])
+            ? resultados[2]
+            : [];
 
-            ]);
+        // Identificar las postulaciones que ya tienen contrato.
+        const postulacionesConContrato = new Set(
+            contratos.map(contrato => String(contrato.id_postulacion))
+        );
 
-
-        const pendientes =
-            Array.isArray(resultados[0])
-                ? resultados[0]
-                : (resultados[0]?.postulaciones || []);
-
-
-        const firmas =
-            Array.isArray(resultados[1])
-                ? resultados[1]
-                : (resultados[1]?.postulaciones || []);
-
-
+        // Mostrar únicamente postulaciones sin contrato generado.
         postulaciones = [
             ...pendientes,
             ...firmas
-        ];
-
+        ].filter(item =>
+            !postulacionesConContrato.has(String(item.id_postulacion))
+        );
 
         console.log(
             'POSTULACIONES PARA CONTRATO:',
             postulaciones
         );
 
-
         pintarPostulaciones();
 
-
     } catch (error) {
-
-        console.error(
-            'Error cargando postulaciones:',
-            error
-        );
-
+        console.error('Error cargando postulaciones:', error);
 
         proximosBody.innerHTML = `
-      <tr>
-        <td colspan="6" class="sin-registros">
-          ${esc(error.message)}
-        </td>
-      </tr>
-    `;
-
+            <tr>
+                <td colspan="6" class="sin-registros">
+                    ${esc(error.message)}
+                </td>
+            </tr>
+        `;
     }
-
 }
 
 
