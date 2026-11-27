@@ -1,38 +1,42 @@
-
 /* =========================================
-   BARRA DE ACCESIBILIDAD - SIDOVI
+   PANEL DE ACCESIBILIDAD - SIDOVI
+   Diseño lateral flotante y adaptable
    ========================================= */
 
 :root {
+    --accesibilidad-naranja: #f28c28;
+    --accesibilidad-naranja-oscuro: #d97706;
     --accesibilidad-azul: #020621;
     --accesibilidad-vino: #800020;
     --accesibilidad-blanco: #ffffff;
 }
 
-/* Botón flotante */
+/* Botón flotante lateral */
 .accesibilidad-boton {
     position: fixed;
-    left: 22px;
-    bottom: 22px;
-    z-index: 9998;
-    width: 54px;
-    height: 54px;
+    right: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10001;
+    width: 58px;
+    height: 58px;
     border: 2px solid #ffffff;
-    border-radius: 50%;
-    background: var(--accesibilidad-azul);
+    border-radius: 18px;
+    background: var(--accesibilidad-naranja);
     color: #ffffff;
-    font-size: 27px;
+    font-size: 28px;
+    line-height: 1;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .24);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: background .2s ease, box-shadow .2s ease, right .25s ease;
 }
 
 .accesibilidad-boton:hover {
-    background: var(--accesibilidad-vino);
-    transform: scale(1.06);
+    background: var(--accesibilidad-naranja-oscuro);
+    box-shadow: 0 7px 22px rgba(0, 0, 0, .3);
 }
 
 .accesibilidad-boton:focus-visible,
@@ -41,37 +45,78 @@
     outline-offset: 3px;
 }
 
-/* Panel */
+/* Panel lateral: aparece hacia la izquierda del botón */
 .accesibilidad-panel {
     position: fixed;
-    left: 22px;
-    bottom: 88px;
-    z-index: 9999;
-    width: min(310px, calc(100vw - 32px));
-    padding: 20px;
-    border-radius: 14px;
+    top: 50%;
+    right: 94px;
+    z-index: 10000;
+    width: min(360px, calc(100vw - 120px));
+    max-height: min( min(720px, 86vh), 860px );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 22px;
+    border: 1px solid #e5e7eb;
+    border-top: 5px solid var(--accesibilidad-naranja);
+    border-radius: 20px;
     background: #ffffff;
     color: #172033;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.24);
-    border-top: 5px solid var(--accesibilidad-vino);
+    box-shadow: 0 12px 38px rgba(0, 0, 0, .24);
     font-family: Arial, sans-serif;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(16px, -50%) scale(.98);
+    transform-origin: right center;
+    transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
 }
 
-.accesibilidad-panel[hidden] {
-    display: none !important;
+.accesibilidad-panel[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(0, -50%) scale(1);
+}
+
+.accesibilidad-encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 7px;
 }
 
 .accesibilidad-panel h2 {
-    margin: 0 0 7px;
+    margin: 0;
     color: var(--accesibilidad-azul);
-    font-size: 19px;
+    font-size: 21px;
+    line-height: 1.25;
+}
+
+.accesibilidad-cerrar {
+    flex: 0 0 34px;
+    width: 34px;
+    min-height: 34px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    font-size: 21px !important;
+    line-height: 1;
 }
 
 .accesibilidad-descripcion {
-    margin: 0 0 16px;
-    color: #4b5563;
+    margin: 0 0 17px;
+    color: #596273;
     font-size: 13px;
     line-height: 1.5;
+}
+
+.accesibilidad-seccion-titulo {
+    margin: 16px 0 9px;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
 }
 
 .accesibilidad-acciones {
@@ -81,20 +126,27 @@
 }
 
 .accesibilidad-panel button {
-    min-height: 42px;
-    padding: 9px 10px;
-    border: 1px solid #d5d9e2;
-    border-radius: 8px;
-    background: #f4f6fa;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 9px;
+    border: 1px solid #d9dee8;
+    border-radius: 10px;
+    background: #f7f8fb;
     color: #172033;
     font-size: 13px;
     font-weight: 600;
+    line-height: 1.25;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease;
 }
 
 .accesibilidad-panel button:hover {
-    background: #e5e9f1;
+    background: #edf0f6;
+    border-color: #aeb8c9;
+}
+
+.accesibilidad-panel button:active {
+    transform: scale(.98);
 }
 
 .accesibilidad-panel button[aria-pressed="true"] {
@@ -105,6 +157,7 @@
 
 .accesibilidad-panel .accesibilidad-restablecer {
     grid-column: 1 / -1;
+    margin-top: 5px;
     background: var(--accesibilidad-vino);
     border-color: var(--accesibilidad-vino);
     color: #ffffff;
@@ -114,7 +167,7 @@
     background: #5f0018;
 }
 
-/* Tamaño de texto */
+/* Ajustes de lectura */
 body.accesibilidad-texto-aumentado {
     font-size: 1.12em;
 }
@@ -130,7 +183,32 @@ body.accesibilidad-texto-aumentado button {
 }
 
 body.accesibilidad-texto-reducido {
-    font-size: 0.92em;
+    font-size: .92em;
+}
+
+/* Escala de grises y contraste negativo: se aplican al contenido,
+   dejando el botón y el panel de accesibilidad con sus colores originales. */
+body.accesibilidad-escala-grises > :not(.accesibilidad-panel):not(.accesibilidad-boton) {
+    filter: grayscale(1);
+}
+
+body.accesibilidad-contraste-negativo > :not(.accesibilidad-panel):not(.accesibilidad-boton) {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* Fondo claro para facilitar la lectura */
+body.accesibilidad-fondo-iluminado {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+body.accesibilidad-fondo-iluminado main,
+body.accesibilidad-fondo-iluminado section,
+body.accesibilidad-fondo-iluminado article,
+body.accesibilidad-fondo-iluminado .card,
+body.accesibilidad-fondo-iluminado .container {
+    background-color: #ffffff !important;
+    color: #111827 !important;
 }
 
 /* Alto contraste */
@@ -166,7 +244,7 @@ body.accesibilidad-alto-contraste textarea {
     border: 2px solid #ffff00 !important;
 }
 
-/* Resaltar enlaces */
+/* Enlaces claramente identificables */
 body.accesibilidad-enlaces-resaltados a {
     outline: 2px solid #ffcc00 !important;
     outline-offset: 3px !important;
@@ -174,17 +252,67 @@ body.accesibilidad-enlaces-resaltados a {
     font-weight: bold !important;
 }
 
-/* Ajustes para pantallas pequeñas */
-@media (max-width: 480px) {
+/* Elementos interactivos y visuales ligeramente ampliados */
+body.accesibilidad-elementos-escalados img,
+body.accesibilidad-elementos-escalados video,
+body.accesibilidad-elementos-escalados canvas,
+body.accesibilidad-elementos-escalados input,
+body.accesibilidad-elementos-escalados select,
+body.accesibilidad-elementos-escalados textarea,
+body.accesibilidad-elementos-escalados button:not(.accesibilidad-boton) {
+    zoom: 1.08;
+}
+
+/* Respeta la preferencia del sistema por movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    .accesibilidad-boton,
+    .accesibilidad-panel,
+    .accesibilidad-panel button {
+        transition: none !important;
+    }
+}
+
+/* Móviles: el panel ocupa casi todo el ancho y queda junto al botón */
+@media (max-width: 520px) {
     .accesibilidad-boton {
-        left: 15px;
-        bottom: 15px;
-        width: 50px;
-        height: 50px;
+        right: 12px;
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
     }
 
     .accesibilidad-panel {
-        left: 15px;
-        bottom: 77px;
+        right: 74px;
+        width: calc(100vw - 94px);
+        max-height: 84vh;
+        padding: 17px;
+        border-radius: 16px;
+    }
+
+    .accesibilidad-panel h2 {
+        font-size: 19px;
+    }
+
+    .accesibilidad-acciones {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .accesibilidad-panel button {
+        min-height: 42px;
+    }
+}
+
+@media (max-width: 350px) {
+    .accesibilidad-boton {
+        right: 8px;
+        width: 46px;
+        height: 46px;
+    }
+
+    .accesibilidad-panel {
+        right: 62px;
+        width: calc(100vw - 76px);
+        padding: 13px;
     }
 }
