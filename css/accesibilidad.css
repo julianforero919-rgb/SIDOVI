@@ -18,10 +18,11 @@
     left: 22px;
     bottom: 22px;
     z-index: 10001;
-    width: 58px;
-    height: 58px;
+    width: 54px;
+    height: 54px;
     border: 2px solid #ffffff;
-    border-radius: 18px;
+
+    border-radius: 50%;
     background: var(--accesibilidad-azul);
     color: #ffffff;
     font-size: 28px;
@@ -31,15 +32,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
+
+
+        transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 
 .accesibilidad-boton:hover {
-    background: var(--accesibilidad-azul-hover);
+    background: var(--accesibilidad-vino);
     box-shadow: 0 7px 22px rgba(0, 0, 0, .3);
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.04);
 }
-
 
 
 .accesibilidad-boton:focus-visible,
@@ -49,6 +51,11 @@
 }
 
 /* Panel lateral: aparece hacia la izquierda del botón */
+.accesibilidad-panel {
+    position: fixed;
+    left: 22px;
+
+
 .accesibilidad-panel {
     position: fixed;
     left: 22px;
@@ -73,6 +80,7 @@
     transform-origin: bottom left;
     transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
 }
+
 
 .accesibilidad-panel[aria-hidden="false"] {
     opacity: 1;
@@ -275,15 +283,14 @@ body.accesibilidad-elementos-escalados button:not(.accesibilidad-boton) {
     }
 }
 
-/* Móviles: el panel ocupa casi todo el ancho y queda junto al botón */
-/* Adaptación para móviles */
+/* Móviles: botón y panel flotantes en la esquina inferior izquierda */
 @media (max-width: 520px) {
     .accesibilidad-boton {
         left: 12px;
         bottom: 12px;
         width: 52px;
         height: 52px;
-        border-radius: 16px;
+        border-radius: 50%;
     }
 
     .accesibilidad-panel {
