@@ -58,10 +58,10 @@
     bottom: 94px;
     z-index: 10000;
     width: min(300px, calc(100vw - 40px));
-    max-height: min(720px, 86vh);
+    max-height: min(480px, 70vh);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 16px;
+    padding: 12px;
     border: 1px solid #e5e7eb;
     border-top: 5px solid var(--accesibilidad-vino);
     border-radius: 20px;
