@@ -1,0 +1,355 @@
+﻿/* ==========================================
+   SIDOVI AI - ASISTENTE FLOTANTE
+   ========================================== */
+
+:root {
+  --sidovi-ai-blue: #020621;
+  --sidovi-ai-wine: #800020;
+  --sidovi-ai-red: #c8192b;
+  --sidovi-ai-bg: #f4f6fa;
+  --sidovi-ai-text: #20283a;
+}
+
+#sidovi-ai-root {
+  font-family: "Barlow", Arial, sans-serif;
+  position: relative;
+  z-index: 9999;
+}
+
+.sidovi-ai-launcher {
+  position: fixed;
+  right: 25px;
+  bottom: 24px;
+  width: 62px;
+  height: 62px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--sidovi-ai-blue), #17234c);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(2, 6, 33, .3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1px;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.sidovi-ai-launcher:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 28px rgba(2, 6, 33, .4);
+}
+
+.sidovi-ai-launcher-icon {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.sidovi-ai-launcher-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.sidovi-ai-panel {
+  position: fixed;
+  right: 25px;
+  bottom: 100px;
+  width: 380px;
+  max-width: calc(100vw - 30px);
+  height: 550px;
+  max-height: calc(100vh - 125px);
+  background: #fff;
+  border-radius: 17px;
+  box-shadow: 0 12px 45px rgba(2, 6, 33, .24);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e5e8ef;
+  animation: sidoviAiAppear .2s ease-out;
+}
+
+.sidovi-ai-panel[hidden] {
+  display: none !important;
+}
+
+@keyframes sidoviAiAppear {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidovi-ai-header {
+  background: linear-gradient(120deg, var(--sidovi-ai-blue), #17234c);
+  color: #fff;
+  padding: 17px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sidovi-ai-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.sidovi-ai-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--sidovi-ai-wine);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+}
+
+.sidovi-ai-brand h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sidovi-ai-brand p {
+  margin: 3px 0 0;
+  color: #d6dbea;
+  font-size: 11px;
+}
+
+.sidovi-ai-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.sidovi-ai-close:hover {
+  background: rgba(255,255,255,.22);
+}
+
+.sidovi-ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 17px 14px;
+  background: var(--sidovi-ai-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.sidovi-ai-message {
+  max-width: 88%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sidovi-ai-message.assistant {
+  align-self: flex-start;
+}
+
+.sidovi-ai-message.user {
+  align-self: flex-end;
+}
+
+.sidovi-ai-bubble {
+  padding: 11px 13px;
+  border-radius: 13px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sidovi-ai-message.assistant .sidovi-ai-bubble {
+  background: #fff;
+  color: var(--sidovi-ai-text);
+  border: 1px solid #e8eaf0;
+  border-top-left-radius: 4px;
+}
+
+.sidovi-ai-message.user .sidovi-ai-bubble {
+  background: var(--sidovi-ai-blue);
+  color: #fff;
+  border-top-right-radius: 4px;
+}
+
+.sidovi-ai-time {
+  color: #8790a2;
+  font-size: 10px;
+  padding: 0 4px;
+}
+
+.sidovi-ai-message.user .sidovi-ai-time {
+  text-align: right;
+}
+
+.sidovi-ai-speak {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  color: #59647a;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.sidovi-ai-speak:hover {
+  color: var(--sidovi-ai-wine);
+}
+
+.sidovi-ai-suggestions {
+  padding: 10px 13px;
+  background: #fff;
+  border-top: 1px solid #edf0f4;
+}
+
+.sidovi-ai-suggestions p {
+  margin: 0 0 8px;
+  color: #788195;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sidovi-ai-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.sidovi-ai-suggestion {
+  border: 1px solid #dfe3eb;
+  background: #fff;
+  color: #303b51;
+  border-radius: 20px;
+  padding: 7px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.sidovi-ai-suggestion:hover {
+  border-color: var(--sidovi-ai-wine);
+  color: var(--sidovi-ai-wine);
+  background: #fff8fa;
+}
+
+.sidovi-ai-composer {
+  background: #fff;
+  border-top: 1px solid #edf0f4;
+  padding: 12px;
+}
+
+.sidovi-ai-input-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sidovi-ai-input {
+  min-width: 0;
+  flex: 1;
+  height: 43px;
+  border: 1px solid #dfe3eb;
+  border-radius: 10px;
+  padding: 0 12px;
+  outline: none;
+  color: var(--sidovi-ai-text);
+  font-family: inherit;
+  font-size: 13px;
+  background: #fff;
+}
+
+.sidovi-ai-input:focus {
+  border-color: var(--sidovi-ai-wine);
+  box-shadow: 0 0 0 2px rgba(128, 0, 32, .08);
+}
+
+.sidovi-ai-input::placeholder {
+  color: #9ba2b1;
+}
+
+.sidovi-ai-action {
+  width: 41px;
+  height: 41px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.sidovi-ai-mic {
+  background: #f0f2f7;
+  color: var(--sidovi-ai-blue);
+}
+
+.sidovi-ai-mic:hover,
+.sidovi-ai-mic.recording {
+  background: #ffe9ed;
+  color: var(--sidovi-ai-red);
+}
+
+.sidovi-ai-send {
+  background: var(--sidovi-ai-wine);
+  color: #fff;
+}
+
+.sidovi-ai-send:hover {
+  background: var(--sidovi-ai-red);
+}
+
+.sidovi-ai-send:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.sidovi-ai-status {
+  min-height: 15px;
+  margin: 6px 2px 0;
+  font-size: 10px;
+  color: #7b8495;
+}
+
+.sidovi-ai-footer {
+  text-align: center;
+  font-size: 10px;
+  color: #9299a7;
+  padding-top: 5px;
+}
+
+@media (max-width: 480px) {
+  .sidovi-ai-launcher {
+    right: 16px;
+    bottom: 17px;
+    width: 57px;
+    height: 57px;
+  }
+
+  .sidovi-ai-panel {
+    right: 10px;
+    bottom: 84px;
+    width: calc(100vw - 20px);
+    max-width: none;
+    height: min(570px, calc(100dvh - 105px));
+    border-radius: 15px;
+  }
+}

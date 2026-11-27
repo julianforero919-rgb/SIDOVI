@@ -5847,7 +5847,166 @@ app.post('/api/auth/logout', requireRoles('RRHH', 'Gerente'), (req, res) => {
   sessions.delete(getSessionToken(req));
   res.setHeader('Set-Cookie', 'sid=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
   res.status(204).end();
+
 });
+
+
+// ============================================================
+// SIDOVI AI - CONSULTAS DE SOLO LECTURA
+// ============================================================
+
+app.post(
+  '/api/sidovi-ai/consulta',
+  requireRoles('RRHH', 'Gerente'),
+  async (req, res) => {
+    try {
+      const pregunta = String(req.body?.pregunta || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      if (!pregunta) {
+        return res.status(400).json({
+          error: 'Escribe una pregunta para SIDOVI AI.'
+        });
+      }
+
+      if (pregunta.length > 500) {
+        return res.status(400).json({
+          error: 'La pregunta supera el límite permitido.'
+        });
+      }
+
+      // Todos los indicadores se consultan mediante SELECT.
+      const resultado = await db.query(`
+        SELECT
+          (
+            SELECT COUNT(*)::int
+            FROM postulacion
+            WHERE fecha_postulacion >= CURRENT_DATE - INTERVAL '7 days'
+          ) AS postulaciones_nuevas,
+
+          (
+            SELECT COUNT(*)::int
+            FROM postulacion
+            WHERE UPPER(TRIM(estado)) = 'EN_REVISION'
+          ) AS postulaciones_revision,
+
+          (
+            SELECT COUNT(*)::int
+            FROM entrevista
+            WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
+              AND fecha_entrevista >= CURRENT_TIMESTAMP
+          ) AS entrevistas_programadas,
+
+          (
+            SELECT COUNT(*)::int
+            FROM entrevista
+            WHERE UPPER(TRIM(estado)) = 'REALIZADA'
+          ) AS entrevistas_realizadas,
+
+          (
+            SELECT COUNT(*)::int
+            FROM examen_programado
+            WHERE UPPER(TRIM(estado)) = 'PROGRAMADO'
+              AND fecha >= CURRENT_DATE
+          ) AS examenes_programados,
+
+          (
+            SELECT COUNT(*)::int
+            FROM examen_programado
+            WHERE UPPER(TRIM(resultado)) = 'PENDIENTE'
+          ) AS examenes_pendientes_revision,
+
+          (
+            SELECT COUNT(*)::int
+            FROM postulacion p
+            WHERE UPPER(TRIM(p.estado)) IN (
+              'PENDIENTE_CONTRATO',
+              'FIRMA_CONTRATO_AGENDADA'
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM contrato c
+              WHERE c.id_postulacion = p.id_postulacion
+            )
+          ) AS contratos_pendientes
+      `);
+
+      const datos = resultado.rows[0];
+      let respuesta = '';
+
+      if (
+        pregunta.includes('postulacion') ||
+        pregunta.includes('nueva') ||
+        pregunta.includes('reciente')
+      ) {
+        respuesta =
+          `En los últimos 7 días se registraron ${datos.postulaciones_nuevas} postulaciones nuevas.`;
+      } else if (
+        pregunta.includes('revision') ||
+        pregunta.includes('revisar')
+      ) {
+        respuesta =
+          `Actualmente hay ${datos.postulaciones_revision} postulaciones en revisión.`;
+      } else if (pregunta.includes('entrevista')) {
+        if (pregunta.includes('realizada')) {
+          respuesta =
+            `Hay ${datos.entrevistas_realizadas} entrevistas registradas como realizadas.`;
+        } else {
+          respuesta =
+            `Hay ${datos.entrevistas_programadas} entrevistas programadas pendientes de realizar.`;
+        }
+      } else if (pregunta.includes('examen')) {
+        if (
+          pregunta.includes('pendiente') ||
+          pregunta.includes('revision') ||
+          pregunta.includes('resultado')
+        ) {
+          respuesta =
+            `Hay ${datos.examenes_pendientes_revision} exámenes con resultado pendiente.`;
+        } else {
+          respuesta =
+            `Hay ${datos.examenes_programados} exámenes programados desde hoy en adelante.`;
+        }
+      } else if (pregunta.includes('contrato')) {
+        respuesta =
+          `Hay ${datos.contratos_pendientes} postulaciones pendientes de contratación que todavía no tienen contrato registrado.`;
+      } else if (
+        pregunta.includes('pendiente') ||
+        pregunta.includes('debo hacer')
+      ) {
+        if (req.session.rol === 'RRHH') {
+          respuesta =
+            `Resumen de Recursos Humanos: ${datos.postulaciones_revision} postulaciones en revisión, ${datos.examenes_pendientes_revision} exámenes con resultado pendiente y ${datos.examenes_programados} exámenes programados.`;
+        } else {
+          respuesta =
+            `Resumen de Gerencia: ${datos.entrevistas_programadas} entrevistas programadas, ${datos.contratos_pendientes} postulaciones pendientes de contratación y ${datos.entrevistas_realizadas} entrevistas realizadas.`;
+        }
+      } else if (
+        pregunta.includes('programado') ||
+        pregunta.includes('proceso')
+      ) {
+        respuesta =
+          `Procesos programados: ${datos.entrevistas_programadas} entrevistas y ${datos.examenes_programados} exámenes.`;
+      } else {
+        respuesta =
+          'Puedo consultar postulaciones nuevas, postulaciones en revisión, entrevistas, exámenes y contratos pendientes. ¿Qué información necesitas?';
+      }
+
+      return res.json({ respuesta });
+
+    } catch (error) {
+      errorResponse(
+        res,
+        error,
+        'No fue posible consultar la información de SIDOVI AI.'
+      );
+    }
+  }
+);
+
 
 app.use((error, _req, res, _next) => errorResponse(res, error, 'Error interno del servidor.'));
 
