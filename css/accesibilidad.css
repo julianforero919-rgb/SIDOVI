@@ -50,19 +50,15 @@
     outline-offset: 3px;
 }
 
-/* Panel lateral: aparece hacia la izquierda del botón */
-.accesibilidad-panel {
-    position: fixed;
-    left: 22px;
 
-
+/* Panel flotante de accesibilidad */
 .accesibilidad-panel {
     position: fixed;
     left: 22px;
     bottom: 94px;
     z-index: 10000;
     width: min(300px, calc(100vw - 40px));
-    max-height: min( min(720px, 86vh), 860px );
+    max-height: min(720px, 86vh);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 16px;
