@@ -33,12 +33,12 @@
     }
 
     const crearBoton = (id, texto, clase = "") => {
-        const boton = document.createElement("button");
-        boton.type = "button";
-        boton.id = id;
-        boton.textContent = texto;
-        if (clase) boton.className = clase;
-        return boton;
+        const elemento = document.createElement("button");
+        elemento.type = "button";
+        elemento.id = id;
+        elemento.textContent = texto;
+        if (clase) elemento.className = clase;
+        return elemento;
     };
 
     const boton = crearBoton("accesibilidadBoton", "♿", "accesibilidad-boton");
@@ -184,17 +184,31 @@
         guardarYAplicar();
     });
 
-    const alternar = (clave) => {
-        configuracion[clave] = !configuracion[clave];
+    // Los modos de color son excluyentes para evitar filtros incompatibles.
+    const modosColor = ["contraste", "grises", "negativo", "iluminado"];
+    function alternarModoColor(clave) {
+        const activar = !configuracion[clave];
+        modosColor.forEach((modo) => {
+            configuracion[modo] = false;
+        });
+        configuracion[clave] = activar;
         guardarYAplicar();
-    };
+    }
 
-    controles.contraste.addEventListener("click", () => alternar("contraste"));
-    controles.enlaces.addEventListener("click", () => alternar("enlaces"));
-    controles.grises.addEventListener("click", () => alternar("grises"));
-    controles.negativo.addEventListener("click", () => alternar("negativo"));
-    controles.iluminado.addEventListener("click", () => alternar("iluminado"));
-    controles.elementos.addEventListener("click", () => alternar("elementos"));
+    controles.contraste.addEventListener("click", () => alternarModoColor("contraste"));
+    controles.grises.addEventListener("click", () => alternarModoColor("grises"));
+    controles.negativo.addEventListener("click", () => alternarModoColor("negativo"));
+    controles.iluminado.addEventListener("click", () => alternarModoColor("iluminado"));
+
+    controles.enlaces.addEventListener("click", () => {
+        configuracion.enlaces = !configuracion.enlaces;
+        guardarYAplicar();
+    });
+
+    controles.elementos.addEventListener("click", () => {
+        configuracion.elementos = !configuracion.elementos;
+        guardarYAplicar();
+    });
 
     controles.restablecer.addEventListener("click", () => {
         configuracion = { ...configuracionInicial };
@@ -211,9 +225,7 @@
         }
 
         if (evento.key === "Tab") {
-            const elementos = Array.from(
-                panel.querySelectorAll("button:not([disabled])")
-            );
+            const elementos = Array.from(panel.querySelectorAll("button:not([disabled])"));
             const primero = elementos[0];
             const ultimo = elementos[elementos.length - 1];
 
