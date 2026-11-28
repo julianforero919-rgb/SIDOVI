@@ -1,4 +1,4 @@
-﻿/* ==========================================
+/* ==========================================
    SIDOVI AI - ASISTENTE FLOTANTE
    ========================================== */
 
@@ -42,8 +42,13 @@
 }
 
 .sidovi-ai-launcher-icon {
-  font-size: 25px;
+  display: flex;
   line-height: 1;
+}
+
+.sidovi-ai-launcher-icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .sidovi-ai-launcher-label {
@@ -103,6 +108,7 @@
 }
 
 .sidovi-ai-avatar {
+  color: #fff;
   width: 42px;
   height: 42px;
   flex-shrink: 0;
@@ -173,6 +179,7 @@
   font-size: 13px;
   line-height: 1.5;
   overflow-wrap: anywhere;
+  white-space: pre-wrap; /* respeta los saltos de línea de las listas */
 }
 
 .sidovi-ai-message.assistant .sidovi-ai-bubble {
@@ -189,9 +196,10 @@
 }
 
 .sidovi-ai-time {
-  color: #8790a2;
-  font-size: 10px;
+  color: #5f6a7d;
+  font-size: 10.5px;
   padding: 0 4px;
+  margin-left: auto;
 }
 
 .sidovi-ai-message.user .sidovi-ai-time {
@@ -199,13 +207,17 @@
 }
 
 .sidovi-ai-speak {
-  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 0;
   background: transparent;
   color: #59647a;
+  font-family: inherit;
   font-size: 11px;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 3px 6px;
+  border-radius: 6px;
 }
 
 .sidovi-ai-speak:hover {
@@ -216,13 +228,6 @@
   padding: 10px 13px;
   background: #fff;
   border-top: 1px solid #edf0f4;
-}
-
-.sidovi-ai-suggestions p {
-  margin: 0 0 8px;
-  color: #788195;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .sidovi-ai-suggestion-list {
@@ -351,5 +356,151 @@
     max-width: none;
     height: min(570px, calc(100dvh - 105px));
     border-radius: 15px;
+  }
+}
+
+/* ==========================================
+   Mejoras: herramientas, enlaces, escribiendo
+   ========================================== */
+
+.sidovi-ai-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sidovi-ai-iconbtn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.sidovi-ai-iconbtn:hover {
+  background: rgba(255, 255, 255, .22);
+}
+
+.sidovi-ai-iconbtn.is-off {
+  color: #ffb3bf; /* voz silenciada */
+}
+
+.sidovi-ai-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.sidovi-ai-message.user .sidovi-ai-meta {
+  justify-content: flex-end;
+}
+
+.sidovi-ai-speak:hover {
+  background: #eceff5;
+  color: var(--sidovi-ai-wine);
+}
+
+.sidovi-ai-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sidovi-ai-link {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--sidovi-ai-wine);
+  border-radius: 16px;
+  padding: 5px 11px;
+  color: var(--sidovi-ai-wine);
+  background: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s, color .2s;
+}
+
+.sidovi-ai-link::after {
+  content: "→";
+  margin-left: 5px;
+}
+
+.sidovi-ai-link:hover {
+  background: var(--sidovi-ai-wine);
+  color: #fff;
+}
+
+/* Las sugerencias ocupan una sola fila con desplazamiento, no tapan el chat */
+.sidovi-ai-suggestions {
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.sidovi-ai-suggestions[hidden] {
+  display: none;
+}
+
+/* Indicador "escribiendo" */
+.sidovi-ai-typing .sidovi-ai-bubble {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 16px;
+}
+
+.sidovi-ai-typing .sidovi-ai-bubble span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8c96aa;
+  animation: sidoviAiDot 1.2s infinite ease-in-out;
+}
+
+.sidovi-ai-typing .sidovi-ai-bubble span:nth-child(2) { animation-delay: .15s; }
+.sidovi-ai-typing .sidovi-ai-bubble span:nth-child(3) { animation-delay: .3s; }
+
+@keyframes sidoviAiDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* El micrófono late mientras escucha */
+.sidovi-ai-mic.recording {
+  animation: sidoviAiPulse 1.2s infinite;
+}
+
+@keyframes sidoviAiPulse {
+  0% { box-shadow: 0 0 0 0 rgba(200, 25, 43, .35); }
+  70% { box-shadow: 0 0 0 9px rgba(200, 25, 43, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(200, 25, 43, 0); }
+}
+
+/* Accesibilidad: foco visible con teclado */
+#sidovi-ai-root button:focus-visible,
+#sidovi-ai-root a:focus-visible,
+#sidovi-ai-root input:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidovi-ai-panel,
+  .sidovi-ai-typing .sidovi-ai-bubble span,
+  .sidovi-ai-mic.recording {
+    animation: none;
+  }
+
+  .sidovi-ai-launcher,
+  .sidovi-ai-suggestion,
+  .sidovi-ai-link {
+    transition: none;
   }
 }
