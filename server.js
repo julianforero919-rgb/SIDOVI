@@ -8,6 +8,15 @@ const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 const rateLimit = require('express-rate-limit');
 const { responder: responderSidoviAi } = require('./server/sidovi-ai');
+const {
+  normalizarEstadoRevision,
+  estadoPostulacionTrasEntrevista,
+  estadoPostulacionTrasExamen,
+  puedeProgramarEntrevista,
+  puedeProgramarExamen,
+  puedeProgramarFirma,
+  puedeConfirmarContratacion
+} = require('./server/flujo-postulacion');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -761,24 +770,8 @@ app.post('/api/postulaciones', async (req, res) => {
   }
 });
 
-const ESTADOS_POSTULACION_DB = {
-  EN_REVISION: 'EN_REVISION',
-  APROBADO_RRHH: 'APROBADO_RRHH',
-  HOJA_VIDA_APROBADA: 'APROBADO_RRHH',
-  ENTREVISTA_PENDIENTE: 'APROBADO_RRHH',
-  RECHAZADO_RRHH: 'RECHAZADO_RRHH',
-  RECHAZADO: 'RECHAZADO_RRHH'
-};
-
-function normalizarEstadoPostulacion(value) {
-  const normalized = String(value || '').trim().toUpperCase()
-    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
-    .replace(/[\\s-]+/g, '_');
-  return ESTADOS_POSTULACION_DB[normalized] || null;
-}
-
 app.patch('/api/postulaciones/:id', requireRoles('RRHH'), async (req, res) => {
-  const estado = normalizarEstadoPostulacion(req.body.estado || req.body.estadoPostulacion);
+  const estado = normalizarEstadoRevision(req.body.estado || req.body.estadoPostulacion);
   const id = Number(req.params.id);
   const motivo = String(req.body.motivoRechazo || req.body.motivo || '').trim();
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'El ID de la postulación no es válido.' });
@@ -1032,7 +1025,7 @@ app.post('/api/entrevistas', requireRoles('RRHH', 'Gerente'), async (req, res) =
       [postId]
     );
     if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
-    if (post.rows[0].estado !== 'APROBADO_RRHH') {
+    if (!puedeProgramarEntrevista(post.rows[0].estado)) {
       throw Object.assign(new Error('La hoja de vida debe estar aprobada por RR. HH. antes de programar la entrevista.'), { status: 409 });
     }
 
@@ -1412,7 +1405,7 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
       [postId]
     );
     if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
-    if (post.rows[0].estado !== 'FIRMA_CONTRATO_AGENDADA') {
+    if (post.rows[0].estado !== 'FIRMA_CONTRATO_AGENDADA' || !puedeProgramarFirma(post.rows[0].estado)) {
       throw Object.assign(new Error('Primero debes programar la firma del contrato.'), { status: 409 });
     }
     const existing = await client.query('SELECT id_contrato FROM contrato WHERE id_postulacion=$1', [postId]);
@@ -1459,7 +1452,7 @@ app.post('/api/contratos/:id/firmar', requireRoles('Gerente'), async (req, res) 
     if (item.estado_contrato === 'Firmado' || item.estado_postulacion === 'CONTRATADO') {
       throw Object.assign(new Error('Este contrato ya está registrado como firmado.'), { status: 409 });
     }
-    if (item.estado_postulacion !== 'CONTRATO_GENERADO') {
+    if (!puedeConfirmarContratacion(item.estado_postulacion)) {
       throw Object.assign(new Error('La postulación no está en la etapa de contrato generado.'), { status: 409 });
     }
     const signed = await client.query(
@@ -5519,11 +5512,7 @@ app.post('/api/evaluaciones/detallada', requireRoles('Gerente'), async (req, res
         [JSON.stringify(preguntas), Math.round(score), payload, idEntrevista]
     );
 
-    const estadoNuevo = resultado === 'APROBADO'
-        ? 'EXAMENES_PENDIENTES'
-        : resultado === 'RECHAZADO'
-            ? 'RECHAZADO'
-            : 'ENTREVISTA';
+    const estadoNuevo = estadoPostulacionTrasEntrevista(resultado);
     const postulacionId = entrevistaResult.rows[0].id_postulacion;
     const estadoAnterior = entrevistaResult.rows[0].estado_actual;
     const postulacionResult = await client.query(
@@ -5614,7 +5603,7 @@ app.post('/api/examenes', requireRoles('RRHH'), async (req, res) => {
       [postId]
     );
     if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
-    if (!['EXAMENES_PENDIENTES', 'APROBADO'].includes(post.rows[0].estado)) {
+    if (!puedeProgramarExamen(post.rows[0].estado)) {
       throw Object.assign(new Error('La postulación todavía no está habilitada para programar exámenes.'), { status: 409 });
     }
     const previousExam = await client.query(
@@ -5745,8 +5734,7 @@ app.post('/api/examenes/:id/verificar', requireRoles('RRHH'), async (req, res) =
     if (!docs.length) throw Object.assign(new Error('No se puede verificar el examen porque todavía no se ha cargado el resultado.'), { status: 400 });
 
     const examState = resultado === 'PENDIENTE' ? 'EN_REVISION' : resultado;
-    const postState = resultado === 'APROBADO' ? 'PENDIENTE_CONTRATO'
-      : resultado === 'RECHAZADO' ? 'RECHAZADO' : 'EXAMENES_EN_REVISION';
+    const postState = estadoPostulacionTrasExamen(resultado);
 
     const updatedExam = await client.query(
       `UPDATE examen_programado
