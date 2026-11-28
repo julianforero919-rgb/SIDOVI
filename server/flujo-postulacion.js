@@ -11,8 +11,8 @@ const ALIASES_REVISION = Object.freeze({
 
 function normalizarEstadoRevision(value) {
   const normalized = String(value || '').trim().toUpperCase()
-    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
-    .replace(/[\\s-]+/g, '_');
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
   return ALIASES_REVISION[normalized] || null;
 }
 
