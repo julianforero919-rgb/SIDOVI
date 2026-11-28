@@ -12,6 +12,21 @@ ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS autorizacion_datos_fecha timestam
 ALTER TABLE contrato ADD COLUMN IF NOT EXISTS fecha_firma_real timestamp;
 ALTER TABLE contrato ADD COLUMN IF NOT EXISTS firmado_por integer REFERENCES usuario(id_usuario) ON DELETE SET NULL;
 
+-- Ampliar los estados permitidos para soportar el flujo de firma.
+ALTER TABLE contrato
+  DROP CONSTRAINT IF EXISTS contrato_estado_check;
+
+ALTER TABLE contrato
+  ADD CONSTRAINT contrato_estado_check
+  CHECK (estado IN (
+    'Borrador',
+    'Pendiente de firma',
+    'Firmado',
+    'Activo',
+    'Finalizado',
+    'Cancelado'
+  ));
+
 -- Retirar temporalmente la restricción anterior para incorporar el nuevo estado.
 ALTER TABLE postulacion DROP CONSTRAINT IF EXISTS postulacion_estado_check;
 
@@ -33,18 +48,36 @@ WHERE c.id_postulacion = p.id_postulacion
   AND LOWER(TRIM(COALESCE(c.estado, ''))) IN
       ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
 
--- Un contrato existente que aún no está firmado queda pendiente de confirmación.
+-- Las postulaciones con contrato pendiente de firma avanzan a CONTRATO_GENERADO.
+-- Se conservan las postulaciones contratadas y no se modifican contratos ya firmados.
 UPDATE postulacion p
 SET estado = 'CONTRATO_GENERADO'
 FROM contrato c
 WHERE c.id_postulacion = p.id_postulacion
-  AND p.estado IN ('PENDIENTE_CONTRATO','FIRMA_CONTRATO_AGENDADA','CONTRATO_GENERADO','CONTRATADO')
+  AND p.estado IN (
+      'PENDIENTE_CONTRATO',
+      'FIRMA_CONTRATO_AGENDADA',
+      'CONTRATO_GENERADO'
+  )
   AND LOWER(TRIM(COALESCE(c.estado, ''))) NOT IN
       ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
 
-UPDATE contrato
+-- Normalizar contratos pendientes solo cuando la postulación ya llegó
+-- a la etapa de generación o programación de firma.
+UPDATE contrato c
 SET estado='Pendiente de firma'
-WHERE LOWER(TRIM(COALESCE(estado,''))) IN ('borrador','firma programada','pendiente de firma');
+WHERE LOWER(TRIM(COALESCE(c.estado,''))) IN
+      ('borrador','firma programada','pendiente de firma')
+  AND EXISTS (
+      SELECT 1
+      FROM postulacion p
+      WHERE p.id_postulacion = c.id_postulacion
+        AND p.estado IN (
+            'PENDIENTE_CONTRATO',
+            'FIRMA_CONTRATO_AGENDADA',
+            'CONTRATO_GENERADO'
+        )
+  );
 
 ALTER TABLE postulacion
   ADD CONSTRAINT postulacion_estado_check
