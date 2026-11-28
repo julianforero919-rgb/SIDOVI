@@ -415,12 +415,12 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
-app.get('/api/postulaciones', async (req, res) => {
+app.get('/api/postulaciones', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try { const values = []; const where = []; if (req.query.estado) { values.push(req.query.estado); where.push(`LOWER(p.estado) = LOWER($${values.length})`); } if (req.query.buscar) { values.push(`%${req.query.buscar}%`); where.push(`(a.nombre_completo || ' ' || a.numero_documento || ' ' || v.nombre_cargo) ILIKE $${values.length}`); } if (req.query.idAspirante || req.query.idPostulante) { values.push(req.query.idAspirante || req.query.idPostulante); where.push(`p.id_aspirante = $${values.length}`); } if (req.query.idSede) { values.push(req.query.idSede); where.push(`v.id_sede = $${values.length}`); } const result = await db.query(`${postulacionQuery} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY p.fecha_postulacion DESC, p.id_postulacion DESC`, values); res.json(result.rows); }
   catch (error) { errorResponse(res, error, 'No fue posible consultar postulaciones.'); }
 });
 
-app.get('/api/postulaciones/:id', async (req, res) => {
+app.get('/api/postulaciones/:id', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try { const result = await db.query(`${postulacionQuery} WHERE p.id_postulacion = $1`, [req.params.id]); if (!result.rowCount) return res.status(404).json({ error: 'Postulación no encontrada.' }); const row = result.rows[0]; const docs = await db.query('SELECT * FROM documento WHERE id_aspirante = $1 ORDER BY id_documento', [row.id_aspirante]); const entrevistas = await db.query('SELECT * FROM entrevista WHERE id_postulacion = $1 ORDER BY id_entrevista DESC', [req.params.id]); res.json({ ...row, documentos: docs.rows, entrevista: entrevistas.rows[0] || null }); }
   catch (error) { errorResponse(res, error, 'No fue posible consultar la postulación.'); }
 });
@@ -819,7 +819,7 @@ app.patch('/api/postulaciones/:id', requireRoles('RRHH'), async (req, res) => {
   }
 });
 
-app.patch('/api/postulaciones/:id/datos', async (req, res) => {
+app.patch('/api/postulaciones/:id/datos', requireRoles('RRHH'), async (req, res) => {
   const {
     nombre,
     nombreCompleto,
@@ -891,11 +891,11 @@ WHERE id_aspirante = $6`,
 });
 
 
-app.delete('/api/postulaciones/:id', async (req, res) => {
+app.delete('/api/postulaciones/:id', requireRoles('RRHH'), async (req, res) => {
   const client = await db.connect(); try { await client.query('BEGIN'); const p = await client.query('SELECT id_aspirante FROM postulacion WHERE id_postulacion = $1', [req.params.id]); if (!p.rowCount) return res.status(404).json({ error: 'Postulación no encontrada.' }); const id = p.rows[0].id_aspirante; await client.query('DELETE FROM evaluacion WHERE id_entrevista IN (SELECT id_entrevista FROM entrevista WHERE id_postulacion = $1)', [req.params.id]); await client.query('DELETE FROM entrevista WHERE id_postulacion = $1', [req.params.id]); await client.query('DELETE FROM evidencia WHERE id_postulacion = $1', [req.params.id]); await client.query('DELETE FROM postulacion WHERE id_postulacion = $1', [req.params.id]); await client.query('DELETE FROM documento WHERE id_aspirante = $1', [id]); await client.query('DELETE FROM aspirante WHERE id_aspirante = $1', [id]); await client.query('COMMIT'); res.status(204).end(); } catch (error) { await client.query('ROLLBACK'); errorResponse(res, error, 'No fue posible eliminar la postulación.'); } finally { client.release(); }
 });
 
-app.get('/api/entrevistas', async (_req, res) => {
+app.get('/api/entrevistas', requireRoles('RRHH', 'Gerente'), async (_req, res) => {
   try {
 
     const result = await db.query(`
@@ -946,7 +946,7 @@ app.get('/api/entrevistas', async (_req, res) => {
   }
 });
 
-app.get('/api/entrevistas/:id', async (req, res) => {
+app.get('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try {
     const result = await db.query(`
       SELECT e.*, e.estado AS resultado, e.observacion AS observaciones,
@@ -974,7 +974,7 @@ app.get('/api/entrevistas/:id', async (req, res) => {
   }
 });
 
-app.post('/api/entrevistas', async (req, res) => {
+app.post('/api/entrevistas', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   const {
     idPostulacion,
     fecha,
@@ -1072,7 +1072,7 @@ app.post('/api/entrevistas', async (req, res) => {
   }
 });
 
-app.patch('/api/entrevistas/:id', async (req, res) => {
+app.patch('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, res) => {
 
   const {
     fecha,
@@ -1283,7 +1283,7 @@ app.patch('/api/entrevistas/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/entrevistas/:id', async (req, res) => {
+app.delete('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try {
     const result = await db.query(
         `DELETE FROM entrevista
@@ -1302,8 +1302,8 @@ app.delete('/api/entrevistas/:id', async (req, res) => {
   }
 });
 
-app.get('/api/documentos', async (req, res) => { try { const values=[]; let clause=''; if(req.query.idPostulante){values.push(req.query.idPostulante); clause='WHERE d.id_aspirante=$1';} const result=await db.query(`SELECT d.*, po.nombre_completo AS aspirante FROM documento d JOIN aspirante po ON po.id_aspirante=d.id_aspirante ${clause} ORDER BY d.id_documento DESC`, values); res.json(result.rows); } catch(error){errorResponse(res,error,'No fue posible consultar documentos.');} });
-app.get('/api/documentos/:id/archivo', async (req, res) => {
+app.get('/api/documentos', requireRoles('RRHH', 'Gerente'), async (req, res) => { try { const values=[]; let clause=''; if(req.query.idPostulante){values.push(req.query.idPostulante); clause='WHERE d.id_aspirante=$1';} const result=await db.query(`SELECT d.*, po.nombre_completo AS aspirante FROM documento d JOIN aspirante po ON po.id_aspirante=d.id_aspirante ${clause} ORDER BY d.id_documento DESC`, values); res.json(result.rows); } catch(error){errorResponse(res,error,'No fue posible consultar documentos.');} });
+app.get('/api/documentos/:id/archivo', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try {
     const result = await db.query('SELECT archivo, tipo_documento, nombre_documento FROM documento WHERE id_documento = $1', [req.params.id]);
     if (!result.rowCount) return res.status(404).send('Documento no encontrado.');
@@ -1319,14 +1319,14 @@ app.get('/api/documentos/:id/archivo', async (req, res) => {
     res.send(contenido);
   } catch (error) { errorResponse(res, error, 'No fue posible abrir el documento.'); }
 });
-app.post('/api/documentos', async (req,res)=>{const {nombreDocumento,nombreArchivo='Documento',tipoDocumento,tipoArchivo='PDF',archivo='pendiente',rutaArchivo,idPostulante,idAspirante}=req.body; try{const r=await db.query('INSERT INTO documento (nombre_documento,tipo_documento,archivo,id_aspirante) VALUES ($1,$2,$3,$4) RETURNING *',[nombreDocumento||nombreArchivo,tipoDocumento||tipoArchivo,rutaArchivo||archivo,idPostulante||idAspirante]);res.status(201).json(r.rows[0]);}catch(error){errorResponse(res,error,'No fue posible crear documento.');}});
-app.patch('/api/documentos/:id', async(req,res)=>{const {nombreDocumento,nombreArchivo,tipoDocumento,tipoArchivo,archivo,rutaArchivo}=req.body; try{const r=await db.query('UPDATE documento SET nombre_documento=COALESCE($1,nombre_documento),tipo_documento=COALESCE($2,tipo_documento),archivo=COALESCE($3,archivo) WHERE id_documento=$4 RETURNING *',[nombreDocumento||nombreArchivo,tipoDocumento||tipoArchivo,rutaArchivo||archivo,req.params.id]);if(!r.rowCount)return res.status(404).json({error:'Documento no encontrado.'});res.json(r.rows[0]);}catch(error){errorResponse(res,error,'No fue posible actualizar documento.');}});
-app.delete('/api/documentos/:id', async(req,res)=>{try{const r=await db.query('DELETE FROM documento WHERE id_documento=$1 RETURNING id_documento',[req.params.id]);if(!r.rowCount)return res.status(404).json({error:'Documento no encontrado.'});res.status(204).end();}catch(error){errorResponse(res,error,'No fue posible eliminar documento.');}});
+app.post('/api/documentos', requireRoles('RRHH'), async (req,res)=>{const {nombreDocumento,nombreArchivo='Documento',tipoDocumento,tipoArchivo='PDF',archivo='pendiente',rutaArchivo,idPostulante,idAspirante}=req.body; try{const r=await db.query('INSERT INTO documento (nombre_documento,tipo_documento,archivo,id_aspirante) VALUES ($1,$2,$3,$4) RETURNING *',[nombreDocumento||nombreArchivo,tipoDocumento||tipoArchivo,rutaArchivo||archivo,idPostulante||idAspirante]);res.status(201).json(r.rows[0]);}catch(error){errorResponse(res,error,'No fue posible crear documento.');}});
+app.patch('/api/documentos/:id', requireRoles('RRHH'), async(req,res)=>{const {nombreDocumento,nombreArchivo,tipoDocumento,tipoArchivo,archivo,rutaArchivo}=req.body; try{const r=await db.query('UPDATE documento SET nombre_documento=COALESCE($1,nombre_documento),tipo_documento=COALESCE($2,tipo_documento),archivo=COALESCE($3,archivo) WHERE id_documento=$4 RETURNING *',[nombreDocumento||nombreArchivo,tipoDocumento||tipoArchivo,rutaArchivo||archivo,req.params.id]);if(!r.rowCount)return res.status(404).json({error:'Documento no encontrado.'});res.json(r.rows[0]);}catch(error){errorResponse(res,error,'No fue posible actualizar documento.');}});
+app.delete('/api/documentos/:id', requireRoles('RRHH'), async(req,res)=>{try{const r=await db.query('DELETE FROM documento WHERE id_documento=$1 RETURNING id_documento',[req.params.id]);if(!r.rowCount)return res.status(404).json({error:'Documento no encontrado.'});res.status(204).end();}catch(error){errorResponse(res,error,'No fue posible eliminar documento.');}});
 
-app.get('/api/evaluaciones', async (_req,res)=>{try{const r=await db.query('SELECT ev.*, e.id_postulacion FROM evaluacion ev JOIN entrevista e ON e.id_entrevista=ev.id_entrevista ORDER BY ev.id_evaluacion DESC');res.json(r.rows);}catch(error){errorResponse(res,error,'No fue posible consultar evaluaciones.');}});
-app.post('/api/evaluaciones', async(req,res)=>{const {preguntas='Evaluación gerencial',calificacion=0,comentarios='',idEntrevista}=req.body;try{const r=await db.query('INSERT INTO evaluacion (preguntas,calificacion,comentarios,id_entrevista) VALUES ($1,$2,$3,$4) RETURNING *',[preguntas,calificacion,comentarios,idEntrevista]);res.status(201).json(r.rows[0]);}catch(error){errorResponse(res,error,'No fue posible guardar evaluación.');}});
+app.get('/api/evaluaciones', requireRoles('RRHH', 'Gerente'), async (_req,res)=>{try{const r=await db.query('SELECT ev.*, e.id_postulacion FROM evaluacion ev JOIN entrevista e ON e.id_entrevista=ev.id_entrevista ORDER BY ev.id_evaluacion DESC');res.json(r.rows);}catch(error){errorResponse(res,error,'No fue posible consultar evaluaciones.');}});
+app.post('/api/evaluaciones', requireRoles('Gerente'), async(req,res)=>{const {preguntas='Evaluación gerencial',calificacion=0,comentarios='',idEntrevista}=req.body;try{const r=await db.query('INSERT INTO evaluacion (preguntas,calificacion,comentarios,id_entrevista) VALUES ($1,$2,$3,$4) RETURNING *',[preguntas,calificacion,comentarios,idEntrevista]);res.status(201).json(r.rows[0]);}catch(error){errorResponse(res,error,'No fue posible guardar evaluación.');}});
 
-app.get('/api/contratos', async (req, res) => {
+app.get('/api/contratos', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try {
     const values = [];
     let clause = '';
@@ -1336,7 +1336,7 @@ app.get('/api/contratos', async (req, res) => {
   } catch (error) { errorResponse(res, error, 'No fue posible consultar contratos.'); }
 });
 
-app.get('/api/contratos/:id', async (req, res) => {
+app.get('/api/contratos/:id', requireRoles('RRHH', 'Gerente'), async (req, res) => {
   try { const result = await db.query('SELECT * FROM contrato WHERE id_contrato=$1', [req.params.id]); if (!result.rowCount) return res.status(404).json({ error: 'Contrato no encontrado.' }); res.json(result.rows[0]); }
   catch (error) { errorResponse(res, error, 'No fue posible consultar el contrato.'); }
 });
@@ -1691,7 +1691,7 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
 
 
 
-app.patch('/api/contratos/:id', async (req, res) => {
+app.patch('/api/contratos/:id', requireRoles('Gerente'), async (req, res) => {
   const { fechaInicio, fechaFin, tipoContrato, salario, estado, observaciones } = req.body;
   try {
     const result = await db.query('UPDATE contrato SET fecha_inicio=COALESCE($1,fecha_inicio), fecha_fin=COALESCE($2,fecha_fin), tipo_contrato=COALESCE($3,tipo_contrato), salario=COALESCE($4,salario), estado=COALESCE($5,estado), observaciones=COALESCE($6,observaciones) WHERE id_contrato=$7 RETURNING *', [fechaInicio, fechaFin, tipoContrato, salario, estado, observaciones, req.params.id]);
@@ -1700,12 +1700,12 @@ app.patch('/api/contratos/:id', async (req, res) => {
   } catch (error) { errorResponse(res, error, 'No fue posible actualizar el contrato.'); }
 });
 
-app.delete('/api/contratos/:id', async (req, res) => {
+app.delete('/api/contratos/:id', requireRoles('Gerente'), async (req, res) => {
   try { const result = await db.query('DELETE FROM contrato WHERE id_contrato=$1 RETURNING id_contrato', [req.params.id]); if (!result.rowCount) return res.status(404).json({ error: 'Contrato no encontrado.' }); res.status(204).end(); }
   catch (error) { errorResponse(res, error, 'No fue posible eliminar el contrato.'); }
 });
 
-app.get('/api/trabajadores', async (_req, res) => {
+app.get('/api/trabajadores', requireRoles('RRHH', 'Gerente'), async (_req, res) => {
   try { const result = await db.query(`SELECT c.id_contrato, c.id_postulacion, c.fecha_inicio, c.fecha_fin, c.tipo_contrato, c.salario, c.estado, po.id_aspirante, po.nombre_completo AS trabajador, po.numero_documento, po.correo, v.nombre_cargo AS cargo FROM contrato c JOIN postulacion p ON p.id_postulacion=c.id_postulacion JOIN aspirante po ON po.id_aspirante=p.id_aspirante JOIN vacante v ON v.id_vacante=p.id_vacante ORDER BY c.fecha_inicio DESC`); res.json(result.rows); }
   catch (error) { errorResponse(res, error, 'No fue posible consultar trabajadores.'); }
 });
