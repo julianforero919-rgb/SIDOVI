@@ -673,34 +673,37 @@ app.post('/api/postulaciones', async (req, res) => {
     );
     if (!vacancy.rowCount) throw Object.assign(new Error('La vacante seleccionada ya no está disponible.'), { status: 400 });
 
-    let aspiranteId = Number(body.idPostulante || body.idAspirante) || null;
-    if (aspiranteId) {
-      const existing = await client.query('SELECT id_aspirante FROM aspirante WHERE id_aspirante=$1 FOR UPDATE', [aspiranteId]);
-      if (!existing.rowCount) throw Object.assign(new Error('El aspirante indicado no existe.'), { status: 404 });
-    } else {
-      const matches = await client.query(
-        `SELECT id_aspirante, numero_documento, correo FROM aspirante
-         WHERE numero_documento=$1 OR LOWER(correo)=LOWER($2) FOR UPDATE`,
-        [documentoFinal, correoFinal]
-      );
-      if (matches.rowCount > 1) throw Object.assign(new Error('El documento y el correo están asociados a aspirantes diferentes. Contacta a Recursos Humanos.'), { status: 409 });
-      if (matches.rowCount === 1) {
-        const match = matches.rows[0];
-        if ((match.numero_documento && match.numero_documento !== documentoFinal) ||
-            (match.correo && match.correo.toLowerCase() !== correoFinal)) {
-          throw Object.assign(new Error('El documento o el correo ya está registrado con datos diferentes.'), { status: 409 });
-        }
-        aspiranteId = match.id_aspirante;
+    let aspiranteId = null;
+    const matches = await client.query(
+      `SELECT id_aspirante, numero_documento, correo FROM aspirante
+       WHERE numero_documento=$1 OR LOWER(correo)=LOWER($2) FOR UPDATE`,
+      [documentoFinal, correoFinal]
+    );
+    if (matches.rowCount > 1) throw Object.assign(new Error('El documento y el correo están asociados a aspirantes diferentes. Contacta a Recursos Humanos.'), { status: 409 });
+    if (matches.rowCount === 1) {
+      const match = matches.rows[0];
+      if ((match.numero_documento && match.numero_documento !== documentoFinal) ||
+          (match.correo && match.correo.toLowerCase() !== correoFinal)) {
+        throw Object.assign(new Error('El documento o el correo ya está registrado con datos diferentes.'), { status: 409 });
       }
+      aspiranteId = match.id_aspirante;
     }
 
     if (aspiranteId) {
       await client.query(
-        `UPDATE aspirante SET nombre_completo=$1, numero_documento=$2, correo=$3, telefono=$4,
-         direccion=COALESCE(NULLIF($5,''), ciudad, ''), ciudad=$6, fecha_nacimiento=$7, sexo=$8,
-         experiencia=$9, descripcion_experiencia=$10, autorizacion_datos=true,
-         autorizacion_datos_fecha=CURRENT_TIMESTAMP WHERE id_aspirante=$11`,
-        [nombreFinal, documentoFinal, correoFinal, telefonoFinal, body.direccion || '', ciudadFinal,
+        `UPDATE aspirante SET
+         nombre_completo=COALESCE(NULLIF(nombre_completo,''),$1),
+         telefono=COALESCE(NULLIF(telefono,''),$2),
+         direccion=COALESCE(NULLIF(direccion,''),NULLIF($3,''),ciudad,''),
+         ciudad=COALESCE(NULLIF(ciudad,''),$4),
+         fecha_nacimiento=COALESCE(fecha_nacimiento,$5),
+         sexo=COALESCE(sexo,$6),
+         experiencia=COALESCE(NULLIF(experiencia,''),$7),
+         descripcion_experiencia=COALESCE(NULLIF(descripcion_experiencia,''),$8),
+         autorizacion_datos=true,
+         autorizacion_datos_fecha=COALESCE(autorizacion_datos_fecha,CURRENT_TIMESTAMP)
+         WHERE id_aspirante=$9`,
+        [nombreFinal, telefonoFinal, body.direccion || '', ciudadFinal,
           fechaNacimiento, sexo, experiencia, descripcion, aspiranteId]
       );
     } else {
