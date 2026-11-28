@@ -12,6 +12,9 @@ ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS autorizacion_datos_fecha timestam
 ALTER TABLE contrato ADD COLUMN IF NOT EXISTS fecha_firma_real timestamp;
 ALTER TABLE contrato ADD COLUMN IF NOT EXISTS firmado_por integer REFERENCES usuario(id_usuario) ON DELETE SET NULL;
 
+-- Retirar temporalmente la restricción anterior para incorporar el nuevo estado.
+ALTER TABLE postulacion DROP CONSTRAINT IF EXISTS postulacion_estado_check;
+
 -- Normalizar alias históricos de estados sin cambiar el sentido de cada etapa.
 UPDATE postulacion SET estado='APROBADO_RRHH'
 WHERE estado IN ('HOJA_VIDA_APROBADA','ENTREVISTA_PENDIENTE');
@@ -31,7 +34,6 @@ WHERE c.id_postulacion = p.id_postulacion
   AND LOWER(TRIM(COALESCE(c.estado, ''))) NOT IN
       ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
 
-ALTER TABLE postulacion DROP CONSTRAINT IF EXISTS postulacion_estado_check;
 ALTER TABLE postulacion
   ADD CONSTRAINT postulacion_estado_check
   CHECK (estado IN (
