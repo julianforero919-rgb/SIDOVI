@@ -675,8 +675,10 @@ app.post('/api/postulaciones', async (req, res) => {
   const consentimiento = body.terminos === true || body.autorizacionDatos === true;
   const documentos = body.documentos;
 
+  const vacanteId = Number(body.idVacante);
   if (!nombreFinal || !documentoFinal || !correoFinal || !telefonoFinal || !ciudadFinal ||
-      !fechaNacimiento || !sexo || !body.idVacante || !['0','1','2','3'].includes(experiencia)) {
+      !fechaNacimiento || !sexo || !Number.isInteger(vacanteId) || vacanteId <= 0 ||
+      !['0','1','2','3'].includes(experiencia)) {
     return res.status(400).json({ error: 'Completa todos los datos personales y laborales obligatorios.' });
   }
   if (!esFechaValida(fechaNacimiento)) {
@@ -698,7 +700,7 @@ app.post('/api/postulaciones', async (req, res) => {
       `SELECT id_vacante FROM vacante
        WHERE id_vacante = $1 AND LOWER(TRIM(estado)) IN ('abierta','activo','activa')
        FOR SHARE`,
-      [Number(body.idVacante)]
+      [vacanteId]
     );
     if (!vacancy.rowCount) throw Object.assign(new Error('La vacante seleccionada ya no está disponible.'), { status: 400 });
 
@@ -754,14 +756,14 @@ app.post('/api/postulaciones', async (req, res) => {
        WHERE id_aspirante=$1 AND id_vacante=$2
          AND estado NOT IN ('RECHAZADO','RECHAZADO_RRHH','CONTRATADO')
        LIMIT 1 FOR UPDATE`,
-      [aspiranteId, Number(body.idVacante)]
+      [aspiranteId, vacanteId]
     );
     if (duplicate.rowCount) throw Object.assign(new Error(`Ya existe una postulación activa para esta vacante. Radicado: SID-${duplicate.rows[0].id_postulacion}.`), { status: 409 });
 
     const post = await client.query(
       `INSERT INTO postulacion (id_aspirante,id_vacante,fecha_postulacion,estado)
        VALUES ($1,$2,CURRENT_DATE,'EN_REVISION') RETURNING *`,
-      [aspiranteId, Number(body.idVacante)]
+      [aspiranteId, vacanteId]
     );
 
     for (const doc of documentos) {
