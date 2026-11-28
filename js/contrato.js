@@ -1192,7 +1192,7 @@ function mostrarDocumento(
 ) {
 
     contratoActualId = Number(contrato.id_contrato) || null;
-    const firmado = String(contrato.estado || '').trim().toLowerCase() === 'firmado';
+    const firmado = ['firmado', 'activo', 'contratado'].includes(String(contrato.estado || '').trim().toLowerCase());
     if (confirmarFirmaContrato) confirmarFirmaContrato.hidden = firmado || !contratoActualId;
     if (estadoFirmaContrato) {
         estadoFirmaContrato.textContent = firmado
@@ -2258,7 +2258,7 @@ async function verContrato(id) {
 
         if (programarFirma) {
             programarFirma.hidden =
-                String(contrato.estado || '').trim().toLowerCase() === 'firmado';
+                ['firmado', 'activo', 'contratado'].includes(String(contrato.estado || '').trim().toLowerCase());
             programarFirma.disabled = false;
             programarFirma.textContent = 'Reprogramar firma';
         }
