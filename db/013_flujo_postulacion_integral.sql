@@ -12,6 +12,14 @@ ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS autorizacion_datos_fecha timestam
 ALTER TABLE contrato ADD COLUMN IF NOT EXISTS fecha_firma_real timestamp;
 ALTER TABLE contrato ADD COLUMN IF NOT EXISTS firmado_por integer REFERENCES usuario(id_usuario) ON DELETE SET NULL;
 
+-- Normalizar alias históricos de estados sin cambiar el sentido de cada etapa.
+UPDATE postulacion SET estado='APROBADO_RRHH'
+WHERE estado IN ('HOJA_VIDA_APROBADA','ENTREVISTA_PENDIENTE');
+UPDATE postulacion SET estado='ENTREVISTA'
+WHERE estado='ENTREVISTA_AGENDADA';
+UPDATE postulacion SET estado='EXAMENES_AGENDADOS'
+WHERE estado='EXAMENES_PROGRAMADOS';
+
 -- Un contrato generado no equivale a una contratación confirmada.
 -- Los registros históricos que quedaron como CONTRATADO con contrato en borrador
 -- pasan a CONTRATO_GENERADO para que puedan verificarse y firmarse correctamente.
