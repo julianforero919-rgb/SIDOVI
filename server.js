@@ -5590,116 +5590,62 @@ app.post('/api/examenes', requireRoles('RRHH'), async (req, res) => {
 });
 
 app.post('/api/examenes/:id/documentos', requireRoles('RRHH'), async (req, res) => {
+  const { nombreDocumento, tipoDocumento = 'PDF', archivo, recibidoEn, observaciones = '' } = req.body || {};
+  if (!String(nombreDocumento || '').trim() || !archivo) return res.status(400).json({ error: 'Nombre y archivo son obligatorios.' });
+  if (String(archivo).length > 8 * 1024 * 1024) return res.status(413).json({ error: 'El archivo supera 8 MB.' });
+  if (recibidoEn && !/^\d{4}-\d{2}-\d{2}$/.test(String(recibidoEn))) return res.status(400).json({ error: 'La fecha de recepción no es válida.' });
 
-  const {
-    nombreDocumento,
-    tipoDocumento = 'PDF',
-    archivo,
-    recibidoEn,
-    observaciones = ''
-  } = req.body;
-
-  if (!nombreDocumento || !archivo) {
-    return res.status(400).json({
-      error: 'Nombre y archivo son obligatorios.'
-    });
-  }
-
-  if (String(archivo).length > 8 * 1024 * 1024) {
-    return res.status(413).json({
-      error: 'El archivo supera 8 MB.'
-    });
-  }
-
+  const client = await db.connect();
   try {
-
-    const examen = await db.query(
-        `
-            SELECT
-                id_examen,
-                id_postulacion,
-                documentos_resultado
-            FROM examen_programado
-            WHERE id_examen = $1
-            `,
-        [req.params.id]
+    await client.query('BEGIN');
+    const found = await client.query(
+      `SELECT ex.id_examen,ex.id_postulacion,ex.documentos_resultado,ex.estado,
+              p.estado AS estado_postulacion
+       FROM examen_programado ex
+       JOIN postulacion p ON p.id_postulacion=ex.id_postulacion
+       WHERE ex.id_examen=$1 FOR UPDATE OF ex,p`,
+      [req.params.id]
     );
-
-    if (!examen.rowCount) {
-      return res.status(404).json({
-        error: 'Examen no encontrado.'
-      });
+    if (!found.rowCount) throw Object.assign(new Error('Examen no encontrado.'), { status: 404 });
+    const exam = found.rows[0];
+    if (!['PROGRAMADO','EN_REVISION'].includes(exam.estado)) {
+      throw Object.assign(new Error('No se pueden cargar resultados en un examen ya verificado.'), { status: 409 });
     }
-
     const documento = {
-      nombreDocumento,
-      tipoDocumento,
+      nombreDocumento: String(nombreDocumento).trim().slice(0,120),
+      tipoDocumento: String(tipoDocumento).slice(0,50),
       archivo,
-      recibidoEn:
-          recibidoEn ||
-          new Date().toISOString().slice(0, 10),
-      cargadoEn:
-          new Date().toISOString()
+      recibidoEn: recibidoEn || new Date().toISOString().slice(0,10),
+      cargadoEn: new Date().toISOString()
     };
-
-    const resultado = await db.query(
-        `
-            UPDATE examen_programado
-            SET
-                documentos_resultado =
-                    COALESCE(documentos_resultado, '[]'::jsonb)
-                    || $1::jsonb,
-
-                fecha_recepcion =
-                    COALESCE($2, CURRENT_DATE),
-
-                observaciones_rrhh = $3,
-
-                estado = 'EN_REVISION'
-
-            WHERE id_examen = $4
-
-            RETURNING
-                id_examen,
-                id_postulacion,
-                documentos_resultado,
-                fecha_recepcion,
-                observaciones_rrhh,
-                estado
-            `,
-        [
-          JSON.stringify([documento]),
-          recibidoEn || null,
-          observaciones,
-          req.params.id
-        ]
+    const updated = await client.query(
+      `UPDATE examen_programado
+       SET documentos_resultado=COALESCE(documentos_resultado,'[]'::jsonb) || $1::jsonb,
+           fecha_recepcion=COALESCE($2,CURRENT_DATE),
+           observaciones_rrhh=$3, estado='EN_REVISION', resultado='PENDIENTE',
+           motivo_rechazo='', fecha_verificacion=NULL, verificado_por=NULL
+       WHERE id_examen=$4 RETURNING *`,
+      [JSON.stringify([documento]), recibidoEn || null, String(observaciones).trim(), req.params.id]
     );
-
-    await db.query(
-        `
-            UPDATE postulacion
-            SET estado = 'EXAMENES_EN_REVISION'
-            WHERE id_postulacion = $1
-            `,
-        [resultado.rows[0].id_postulacion]
+    await client.query(
+      "UPDATE postulacion SET estado='EXAMENES_EN_REVISION' WHERE id_postulacion=$1",
+      [exam.id_postulacion]
     );
-
-    res.status(201).json(resultado.rows[0]);
-
+    if (exam.estado_postulacion !== 'EXAMENES_EN_REVISION') {
+      await client.query(
+        `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+         VALUES ($1,$2,'EXAMENES_EN_REVISION','Resultados de exámenes cargados por Recursos Humanos.',$3)`,
+        [exam.id_postulacion, exam.estado_postulacion, req.session.id_usuario]
+      );
+    }
+    await client.query('COMMIT');
+    res.status(201).json(updated.rows[0]);
   } catch (error) {
-
-    console.error(
-        'Error cargando resultado del examen:',
-        error
-    );
-
-    errorResponse(
-        res,
-        error,
-        'No fue posible cargar el resultado.'
-    );
+    await client.query('ROLLBACK');
+    errorResponse(res,error,'No fue posible cargar el resultado del examen.');
+  } finally {
+    client.release();
   }
-
 });
 
 // ============================================================
