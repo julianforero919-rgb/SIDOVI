@@ -1493,6 +1493,11 @@ app.post('/api/contratos/:id/firmar', requireRoles('Gerente'), async (req, res) 
        VALUES ($1,'CONTRATO_GENERADO','CONTRATADO','Firma del contrato confirmada por Gerencia.',$2)`,
       [item.id_postulacion,req.session.id_usuario]
     );
+    await client.query(
+      `INSERT INTO notificacion (mensaje,leida,id_usuario,id_postulacion)
+       VALUES ($1,false,$2,$3)`,
+      ['La firma de tu contrato fue registrada correctamente. Tu proceso de vinculación ha finalizado.',req.session.id_usuario,item.id_postulacion]
+    );
     await client.query('COMMIT');
     res.json({ ...signed.rows[0], estado_postulacion: 'CONTRATADO' });
   } catch (error) {
