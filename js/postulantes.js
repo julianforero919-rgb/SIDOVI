@@ -21,13 +21,18 @@ function escapeHtml(value = '') { const div = document.createElement('div'); div
 function badgeClass(status = '') { const value = status.toLowerCase(); return value.includes('aprob') || value.includes('contrato') ? 'badge-aprobado' : value.includes('rechaz') || value.includes('cancel') ? 'badge-rechazado' : value.includes('entrevista') ? 'badge-entrevista' : 'badge-pendiente'; }
 function nombreEstado(estado) { const match = estados.find((e) => e.value === estado); return match ? match.label : String(estado || '').replace(/_/g, ' '); }
 function accionesProceso(p) {
-  const acciones = [
-    `<select class="estado-editor" data-id="${p.id_postulacion}">${estados.map((e) => `<option value="${e.value}" ${p.estado === e.value ? 'selected' : ''}>${e.label}</option>`).join('')}</select>`,
-    `<button class="btn-xs btn-xs-green guardar-estado" data-id="${p.id_postulacion}">Estado</button>`,
-    `<button class="btn-xs btn-xs-blue editar" data-id="${p.id_postulacion}">Editar</button>`
-  ];
+  const acciones = [];
+  if (p.estado === 'EN_REVISION') {
+    acciones.push(
+      `<select class="estado-editor" data-id="${p.id_postulacion}">${estados.map((e) => `<option value="${e.value}" ${p.estado === e.value ? 'selected' : ''}>${e.label}</option>`).join('')}</select>`,
+      `<button class="btn-xs btn-xs-green guardar-estado" data-id="${p.id_postulacion}">Guardar revisión</button>`
+    );
+  } else {
+    acciones.push('<span class="estado-controlado">Etapa gestionada desde su módulo</span>');
+  }
+  acciones.push(`<button class="btn-xs btn-xs-blue editar" data-id="${p.id_postulacion}">Editar</button>`);
   if (p.estado === 'APROBADO_RRHH') acciones.push(`<a class="btn-xs btn-xs-blue" href="agenda.html?idPostulacion=${p.id_postulacion}">Agendar entrevista</a>`);
-  if (p.estado === 'EXAMENES_PENDIENTES') acciones.push('<a class="btn-xs btn-xs-blue" href="examenes.html">Programar exámenes</a>');
+  if (p.estado === 'EXAMENES_PENDIENTES' || p.estado === 'APROBADO') acciones.push('<a class="btn-xs btn-xs-blue" href="examenes.html">Programar exámenes</a>');
   acciones.push(`<button class="btn-xs btn-xs-red eliminar" data-id="${p.id_postulacion}">Eliminar</button>`);
   return acciones.join('');
 }
