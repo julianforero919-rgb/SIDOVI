@@ -6,16 +6,8 @@ const form = document.getElementById('candidateForm');
 const body = document.getElementById('postulantesBody');
 const estados = [
   { label: 'En revisión', value: 'EN_REVISION' },
-  { label: 'Hoja de vida aprobada', value: 'HOJA_VIDA_APROBADA' },
-  { label: 'Entrevista pendiente', value: 'ENTREVISTA_PENDIENTE' },
-  { label: 'Entrevista agendada', value: 'ENTREVISTA_AGENDADA' },
-  { label: 'Exámenes pendientes', value: 'EXAMENES_PENDIENTES' },
-  { label: 'Exámenes agendados', value: 'EXAMENES_AGENDADOS' },
-  { label: 'Exámenes en revisión', value: 'EXAMENES_EN_REVISION' },
-  { label: 'Pendiente de contrato', value: 'PENDIENTE_CONTRATO' },
-  { label: 'Firma contrato agendada', value: 'FIRMA_CONTRATO_AGENDADA' },
-  { label: 'Contratado', value: 'CONTRATADO' },
-  { label: 'Rechazado', value: 'RECHAZADO' }
+  { label: 'Hoja de vida aprobada', value: 'APROBADO_RRHH' },
+  { label: 'Rechazada por RR. HH.', value: 'RECHAZADO_RRHH' }
 ];
 let postulaciones = [];
 
@@ -34,7 +26,7 @@ function accionesProceso(p) {
     `<button class="btn-xs btn-xs-green guardar-estado" data-id="${p.id_postulacion}">Estado</button>`,
     `<button class="btn-xs btn-xs-blue editar" data-id="${p.id_postulacion}">Editar</button>`
   ];
-  if (p.estado === 'HOJA_VIDA_APROBADA' || p.estado === 'ENTREVISTA_PENDIENTE') acciones.push(`<a class="btn-xs btn-xs-blue" href="agenda.html?idPostulacion=${p.id_postulacion}">Agendar entrevista</a>`);
+  if (p.estado === 'APROBADO_RRHH') acciones.push(`<a class="btn-xs btn-xs-blue" href="agenda.html?idPostulacion=${p.id_postulacion}">Agendar entrevista</a>`);
   if (p.estado === 'EXAMENES_PENDIENTES') acciones.push('<a class="btn-xs btn-xs-blue" href="examenes.html">Programar exámenes</a>');
   acciones.push(`<button class="btn-xs btn-xs-red eliminar" data-id="${p.id_postulacion}">Eliminar</button>`);
   return acciones.join('');
@@ -60,7 +52,21 @@ body.addEventListener('click', async (event) => {
   try {
     if (button.classList.contains('editar')) return openModal(candidate);
     if (button.classList.contains('eliminar')) { if (!confirm(`¿Eliminar a ${candidate.nombre_completo} y sus registros relacionados?`)) return; await request(`/api/postulaciones/${id}`, { method: 'DELETE' }); return loadPostulaciones(); }
-    if (button.classList.contains('guardar-estado')) { const estado = body.querySelector(`.estado-editor[data-id="${id}"]`).value; await request(`/api/postulaciones/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ estado }) }); candidate.estado = estado; render(); }
+    if (button.classList.contains('guardar-estado')) {
+      const estado = body.querySelector(`.estado-editor[data-id="${id}"]`).value;
+      let motivoRechazo = '';
+      if (estado === 'RECHAZADO_RRHH') {
+        motivoRechazo = prompt('Indica el motivo del rechazo de la hoja de vida:')?.trim() || '';
+        if (!motivoRechazo) return;
+      }
+      await request(`/api/postulaciones/${id}`, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ estado, motivoRechazo })
+      });
+      candidate.estado = estado;
+      render();
+    }
   } catch (error) { alert(error.message); }
 });
 
