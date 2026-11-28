@@ -975,100 +975,68 @@ app.get('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, res
 });
 
 app.post('/api/entrevistas', requireRoles('RRHH', 'Gerente'), async (req, res) => {
-  const {
-    idPostulacion,
-    fecha,
-    fechaEntrevista,
-    hora = '09:00',
-    modalidad = 'Presencial',
-    indicaciones = '',
-    observaciones = '',
-    idGerente
-  } = req.body;
+  const { idPostulacion, fecha, fechaEntrevista, hora = '09:00', modalidad = 'Presencial', indicaciones = '', observaciones = '' } = req.body || {};
+  const postId = Number(idPostulacion);
+  const fechaFinal = fecha || fechaEntrevista;
+  if (!Number.isInteger(postId) || postId <= 0) return res.status(400).json({ error: 'Selecciona una postulación válida.' });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaFinal || ''))) return res.status(400).json({ error: 'La fecha de la entrevista no es válida.' });
+  if (!/^\d{2}:\d{2}$/.test(String(hora || ''))) return res.status(400).json({ error: 'La hora debe tener el formato HH:MM.' });
 
+  const client = await db.connect();
   try {
-    const approved = await db.query(
-        `SELECT id_postulacion
-     FROM postulacion
-     WHERE id_postulacion = $1
-       AND estado IN (
-         'APROBADO',
-         'APROBADO_RRHH',
-         'ENTREVISTA'
-       )`,
-        [idPostulacion]
+    await client.query('BEGIN');
+    const post = await client.query(
+      'SELECT estado FROM postulacion WHERE id_postulacion=$1 FOR UPDATE',
+      [postId]
     );
-
-    if (!approved.rowCount) {
-      return res.status(400).json({
-        error: 'La postulación debe estar aprobada antes de agendar la entrevista.'
-      });
+    if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
+    if (post.rows[0].estado !== 'APROBADO_RRHH') {
+      throw Object.assign(new Error('La hoja de vida debe estar aprobada por RR. HH. antes de programar la entrevista.'), { status: 409 });
     }
-    const rrhhOwner = await db.query('SELECT id_rrhh FROM recursos_humanos WHERE activo = true ORDER BY id_rrhh LIMIT 1');
-    const idRrhh = rrhhOwner.rows[0]?.id_rrhh || null;
-    const selected = await db.query(
-        `INSERT INTO aspirantes_seleccionados
-         (id_postulacion, fecha_seleccion, estado, id_rrhh)
-       VALUES ($1, CURRENT_DATE, 'SELECCIONADO_EN_PROCESO', $2)
-       ON CONFLICT (id_postulacion) DO UPDATE
-         SET estado = EXCLUDED.estado,
-             id_rrhh = EXCLUDED.id_rrhh
+
+    const gerenteResult = await client.query(
+      `SELECT id_usuario FROM usuario
+       WHERE activo=true AND LOWER(TRIM(rol)) IN ('gerente','gerencia')
+       ORDER BY id_usuario LIMIT 1`
+    );
+    if (!gerenteResult.rowCount) throw Object.assign(new Error('No existe un usuario activo con rol Gerente.'), { status: 400 });
+
+    const rrhhOwner = await client.query(
+      'SELECT id_rrhh FROM recursos_humanos WHERE activo=true ORDER BY id_rrhh LIMIT 1'
+    );
+    const selected = await client.query(
+      `INSERT INTO aspirantes_seleccionados (id_postulacion,fecha_seleccion,estado,id_rrhh)
+       VALUES ($1,CURRENT_DATE,'SELECCIONADO_EN_PROCESO',$2)
+       ON CONFLICT (id_postulacion) DO UPDATE SET estado=EXCLUDED.estado,id_rrhh=EXCLUDED.id_rrhh
        RETURNING id_seleccionado`,
-        [idPostulacion, idRrhh]
+      [postId, rrhhOwner.rows[0]?.id_rrhh || null]
     );
-
-    const modalidadDB = String(modalidad).toLowerCase().includes('virtual')
-        ? 'Virtual'
-        : 'Presencial';
-
-    const gerenteResult = await db.query(`
-      SELECT id_usuario
-      FROM usuario
-      WHERE activo = true
-        AND LOWER(TRIM(rol)) IN ('gerente', 'gerencia')
-      ORDER BY id_usuario
-      LIMIT 1
-    `);
-    const gerenteId = gerenteResult.rows[0]?.id_usuario || null;
-    if (!gerenteId) {
-      return res.status(400).json({ error: 'No existe un usuario activo con rol Gerente. Registra o activa el gerente antes de agendar.' });
-    }
-
-    const fechaHoraEntrevista =
-        `${fecha || fechaEntrevista} ${hora || '00:00'}:00`;
-
-    const result = await db.query(`
-  INSERT INTO entrevista
-    (fecha_entrevista, modalidad, estado, observacion,
-     id_seleccionado, id_gerente, id_postulacion)
-  VALUES ($1, $2, 'PROGRAMADA', $3, $4, $5, $6)
-  RETURNING *
-`, [
-      fechaHoraEntrevista,
-      modalidadDB,
-      indicaciones || observaciones,
-      selected.rows[0].id_seleccionado,
-      gerenteId,
-      idPostulacion
-    ]);
-
-    await db.query(
-        `UPDATE postulacion
-   SET estado = 'ENTREVISTA'
-   WHERE id_postulacion = $1`,
-        [idPostulacion]
+    const modalidadDB = String(modalidad).toLowerCase().includes('virtual') ? 'Virtual' : 'Presencial';
+    const created = await client.query(
+      `INSERT INTO entrevista
+       (fecha_entrevista,modalidad,estado,observacion,id_seleccionado,id_gerente,id_postulacion)
+       VALUES ($1,$2,'PROGRAMADA',$3,$4,$5,$6) RETURNING *`,
+      [`${fechaFinal} ${hora}:00`, modalidadDB, indicaciones || observaciones,
+        selected.rows[0].id_seleccionado, gerenteResult.rows[0].id_usuario, postId]
     );
-
+    await client.query("UPDATE postulacion SET estado='ENTREVISTA' WHERE id_postulacion=$1", [postId]);
+    await client.query(
+      `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+       VALUES ($1,$2,'ENTREVISTA',$3,$4)`,
+      [postId, post.rows[0].estado, `Entrevista programada para el ${fechaFinal} a las ${hora}.`, req.session.id_usuario]
+    );
+    await client.query('COMMIT');
     res.status(201).json({
-      ...result.rows[0],
-      id_entrevista: result.rows[0].id_entrevista,
+      ...created.rows[0],
       hora_entrevista: hora,
-      observaciones: result.rows[0].observacion,
-      resultado: result.rows[0].estado
+      observaciones: created.rows[0].observacion,
+      resultado: created.rows[0].estado
     });
   } catch (error) {
-    console.error('Error al guardar entrevista:', error);
+    await client.query('ROLLBACK');
     errorResponse(res, error, 'No fue posible guardar la entrevista.');
+  } finally {
+    client.release();
   }
 });
 
@@ -5507,6 +5475,61 @@ app.get('/api/examenes', requireRoles('RRHH', 'Gerente'), async (_req, res) => {
         error,
         'No fue posible consultar exámenes.'
     );
+  }
+});
+
+app.post('/api/examenes', requireRoles('RRHH'), async (req, res) => {
+  const { idPostulacion, tipos = [], fecha, hora, lugar, direccion = '', observaciones = '' } = req.body || {};
+  const postId = Number(idPostulacion);
+  if (!Number.isInteger(postId) || postId <= 0) return res.status(400).json({ error: 'Selecciona una postulación válida.' });
+  if (!Array.isArray(tipos) || !tipos.length || tipos.some(tipo => !String(tipo).trim())) {
+    return res.status(400).json({ error: 'Selecciona al menos un tipo de examen.' });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha || ''))) return res.status(400).json({ error: 'La fecha del examen no es válida.' });
+  if (!/^\d{2}:\d{2}$/.test(String(hora || ''))) return res.status(400).json({ error: 'La hora debe tener el formato HH:MM.' });
+  if (!String(lugar || '').trim()) return res.status(400).json({ error: 'El lugar de los exámenes es obligatorio.' });
+
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const post = await client.query(
+      'SELECT estado FROM postulacion WHERE id_postulacion=$1 FOR UPDATE',
+      [postId]
+    );
+    if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
+    if (!['EXAMENES_PENDIENTES', 'APROBADO'].includes(post.rows[0].estado)) {
+      throw Object.assign(new Error('La postulación todavía no está habilitada para programar exámenes.'), { status: 409 });
+    }
+    const previousExam = await client.query(
+      `SELECT id_examen, estado FROM examen_programado
+       WHERE id_postulacion=$1 AND estado <> 'RECHAZADO'
+       ORDER BY id_examen DESC LIMIT 1 FOR UPDATE`,
+      [postId]
+    );
+    if (previousExam.rowCount) {
+      throw Object.assign(new Error('Esta postulación ya tiene exámenes programados o en revisión.'), { status: 409 });
+    }
+    const created = await client.query(
+      `INSERT INTO examen_programado
+       (id_postulacion, tipos, fecha, hora, lugar, direccion, observaciones, estado, programado_por)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'PROGRAMADO',$8)
+       RETURNING *`,
+      [postId, tipos.map(tipo => String(tipo).trim()), fecha, hora, String(lugar).trim(),
+        String(direccion).trim(), String(observaciones).trim(), req.session.id_usuario]
+    );
+    await client.query("UPDATE postulacion SET estado='EXAMENES_AGENDADOS' WHERE id_postulacion=$1", [postId]);
+    await client.query(
+      `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+       VALUES ($1,$2,'EXAMENES_AGENDADOS',$3,$4)`,
+      [postId, post.rows[0].estado, `Exámenes programados para el ${fecha} a las ${hora}.`, req.session.id_usuario]
+    );
+    await client.query('COMMIT');
+    res.status(201).json(created.rows[0]);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res, error, 'No fue posible programar los exámenes.');
+  } finally {
+    client.release();
   }
 });
 
