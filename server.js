@@ -1588,7 +1588,7 @@ app.patch('/api/contratos/:id', requireRoles('Gerente'), async (req, res) => {
   try {
     const current = await db.query('SELECT estado FROM contrato WHERE id_contrato=$1', [req.params.id]);
     if (!current.rowCount) return res.status(404).json({ error: 'Contrato no encontrado.' });
-    if (current.rows[0].estado === 'Firmado') return res.status(409).json({ error: 'Un contrato firmado no se puede modificar desde este módulo.' });
+    if (['firmado','activo','contratado'].includes(String(current.rows[0].estado || '').trim().toLowerCase())) return res.status(409).json({ error: 'Un contrato firmado no se puede modificar desde este módulo.' });
     const result = await db.query(
       `UPDATE contrato SET
        fecha_inicio=COALESCE($1,fecha_inicio),
@@ -1614,7 +1614,7 @@ app.delete('/api/contratos/:id', requireRoles('Gerente'), async (req, res) => {
       [req.params.id]
     );
     if (!current.rowCount) throw Object.assign(new Error('Contrato no encontrado.'), { status: 404 });
-    if (current.rows[0].estado === 'Firmado') throw Object.assign(new Error('No se puede eliminar un contrato firmado.'), { status: 409 });
+    if (['firmado','activo','contratado'].includes(String(current.rows[0].estado || '').trim().toLowerCase())) throw Object.assign(new Error('No se puede eliminar un contrato firmado.'), { status: 409 });
     await client.query('DELETE FROM contrato WHERE id_contrato=$1', [req.params.id]);
     const post = await client.query(
       `UPDATE postulacion SET estado='FIRMA_CONTRATO_AGENDADA'
