@@ -35,6 +35,7 @@ describe('Flujo de postulación SIDOVI', () => {
     expect(puedeProgramarEntrevista('APROBADO_RRHH')).toBe(true);
     expect(puedeProgramarEntrevista('EN_REVISION')).toBe(false);
     expect(puedeProgramarExamen('EXAMENES_PENDIENTES')).toBe(true);
+    expect(puedeProgramarExamen('APROBADO')).toBe(false);
     expect(puedeProgramarExamen('ENTREVISTA')).toBe(false);
     expect(puedeProgramarFirma('PENDIENTE_CONTRATO')).toBe(true);
     expect(puedeProgramarFirma('CONTRATO_GENERADO')).toBe(true);
