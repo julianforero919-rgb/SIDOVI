@@ -383,7 +383,7 @@ function iniciar() {
                         .trim()
                         .toUpperCase();
 
-                return estado === 'EXAMENES_PENDIENTES';
+                return ['EXAMENES_PENDIENTES', 'APROBADO'].includes(estado);
 
             });
 
