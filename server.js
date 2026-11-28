@@ -395,6 +395,7 @@ SELECT
   a.experiencia,
   a.descripcion_experiencia,
   a.autorizacion_datos,
+  a.autorizacion_datos_fecha,
 
   v.nombre_cargo AS cargo,
   v.descripcion AS descripcion_vacante,
@@ -456,7 +457,7 @@ app.get('/api/postulaciones/:id', requireRoles('RRHH', 'Gerente'), async (req, r
 
 app.get('/api/hojas-de-vida', requireRoles('RRHH', 'Gerente'), async (_req, res) => {
   try {
-    const result = await db.query(`SELECT p.id_postulacion, p.fecha_postulacion, p.estado, a.id_aspirante, a.nombre_completo, a.tipo_documento, a.numero_documento, a.correo, a.telefono, a.direccion, a.ciudad, a.fecha_nacimiento, a.sexo, a.experiencia, a.descripcion_experiencia, v.nombre_cargo AS cargo, COALESCE(json_agg(json_build_object('id_documento', d.id_documento, 'nombre_documento', d.nombre_documento, 'tipo_documento', d.tipo_documento, 'archivo', d.archivo) ORDER BY d.id_documento) FILTER (WHERE d.id_documento IS NOT NULL), '[]') AS documentos FROM postulacion p JOIN aspirante a ON a.id_aspirante = p.id_aspirante JOIN vacante v ON v.id_vacante = p.id_vacante LEFT JOIN documento d ON d.id_aspirante = a.id_aspirante GROUP BY p.id_postulacion, a.id_aspirante, v.nombre_cargo ORDER BY p.fecha_postulacion DESC, p.id_postulacion DESC`);
+    const result = await db.query(`SELECT p.id_postulacion, p.fecha_postulacion, p.estado, a.id_aspirante, a.nombre_completo, a.tipo_documento, a.numero_documento, a.correo, a.telefono, a.direccion, a.ciudad, a.fecha_nacimiento, a.sexo, a.experiencia, a.descripcion_experiencia, a.autorizacion_datos, a.autorizacion_datos_fecha, v.nombre_cargo AS cargo, COALESCE(json_agg(json_build_object('id_documento', d.id_documento, 'nombre_documento', d.nombre_documento, 'tipo_documento', d.tipo_documento, 'archivo', d.archivo) ORDER BY d.id_documento) FILTER (WHERE d.id_documento IS NOT NULL), '[]') AS documentos FROM postulacion p JOIN aspirante a ON a.id_aspirante = p.id_aspirante JOIN vacante v ON v.id_vacante = p.id_vacante LEFT JOIN documento d ON d.id_aspirante = a.id_aspirante GROUP BY p.id_postulacion, a.id_aspirante, v.nombre_cargo ORDER BY p.fecha_postulacion DESC, p.id_postulacion DESC`);
     res.json(result.rows);
   } catch (error) { errorResponse(res, error, 'No fue posible consultar las hojas de vida.'); }
 });
