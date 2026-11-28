@@ -1219,26 +1219,32 @@ function mostrarDocumento(
 
     escribirDoc(
         'docFechaInicio',
-        formatearFechaLarga(
-            contrato.fecha_inicio
-        )
+        formatearFechaLarga(contrato.fecha_inicio)
     );
 
+    escribirDoc('docTipoContrato', contrato.tipo_contrato || 'No especificada');
+    escribirDoc('docTipoContratoClausula', contrato.tipo_contrato || 'No especificada');
+    escribirDoc(
+        'docFechaFin',
+        contrato.fecha_fin ? formatearFechaLarga(contrato.fecha_fin) : 'No aplica'
+    );
 
-    // Fecha de firma: se toma la fecha de inicio del contrato
+    // La fecha de firma es distinta de la fecha de inicio laboral.
     escribirDoc(
         'docFirmaFecha',
         fechaDeFirmaEnLetras(
-            contrato.fecha_inicio
+            contrato.fecha_firma_real || contrato.fecha_firma_programada || contrato.fecha_inicio
         )
     );
 
-
+    const fechaCreacion = contrato.creado_en
+        ? new Date(contrato.creado_en)
+        : new Date();
     escribirDoc(
         'docFechaContrato',
-        new Date().toLocaleDateString(
-            'es-CO'
-        )
+        Number.isNaN(fechaCreacion.getTime())
+            ? new Date().toLocaleDateString('es-CO')
+            : fechaCreacion.toLocaleDateString('es-CO')
     );
 
 
@@ -1841,7 +1847,7 @@ programarFirma?.addEventListener(
             // ------------------------------------------------------
 
             datoEstado.textContent =
-                'FIRMA_CONTRATO_AGENDADA';
+                resultado.estado_postulacion || 'FIRMA_CONTRATO_AGENDADA';
 
 
             fechaFirma.value =
