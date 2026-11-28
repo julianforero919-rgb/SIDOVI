@@ -361,6 +361,11 @@ SELECT
   a.telefono,
   a.direccion,
   a.sexo,
+  a.ciudad,
+  a.fecha_nacimiento,
+  a.experiencia,
+  a.descripcion_experiencia,
+  a.autorizacion_datos,
 
   v.nombre_cargo AS cargo,
   v.descripcion AS descripcion_vacante,
@@ -628,153 +633,191 @@ app.put(
 );
 
 app.post('/api/postulaciones', async (req, res) => {
-  const { idPostulante, idAspirante, nombre, nombreCompleto, apellido, cedula, numeroDocumento, email, correo, telefono, ciudad, direccion, sexo: sexoRecibido, cargo, idVacante, documentos = [] } = req.body;
-  const sexo = normalizarGenero(sexoRecibido);
-  if (!sexo) return res.status(400).json({ error: 'Debes seleccionar el género (Hombre, Mujer u Otro).' });
+  const body = req.body || {};
+  const nombreFinal = String(body.nombreCompleto || body.nombre || '').trim();
+  const documentoFinal = String(body.cedula || body.numeroDocumento || '').trim();
+  const correoFinal = String(body.email || body.correo || '').trim().toLowerCase();
+  const telefonoFinal = String(body.telefono || '').trim();
+  const ciudadFinal = String(body.ciudad || '').trim();
+  const fechaNacimiento = body.fecha_nac || body.fechaNacimiento;
+  const sexo = normalizarGenero(body.sexo);
+  const experiencia = String(body.experiencia ?? '').trim();
+  const descripcion = String(body.descripcionExperiencia ?? body.descripcion ?? '').trim();
+  const consentimiento = body.terminos === true || body.autorizacionDatos === true;
+  const documentos = body.documentos;
+
+  if (!nombreFinal || !documentoFinal || !correoFinal || !telefonoFinal || !ciudadFinal ||
+      !fechaNacimiento || !sexo || !body.idVacante || !['0','1','2','3'].includes(experiencia)) {
+    return res.status(400).json({ error: 'Completa todos los datos personales y laborales obligatorios.' });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaNacimiento))) {
+    return res.status(400).json({ error: 'La fecha de nacimiento no tiene un formato válido.' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoFinal)) {
+    return res.status(400).json({ error: 'Ingresa un correo electrónico válido.' });
+  }
+  if (!consentimiento) return res.status(400).json({ error: 'Debes autorizar el tratamiento de tus datos personales.' });
+  if (!Array.isArray(documentos) || documentos.length < 3 ||
+      !['HOJA_DE_VIDA','CEDULA','FOTO'].every(tipo => documentos.some(doc => String(doc.tipoDocumento || doc.tipoArchivo || '').toUpperCase() === tipo))) {
+    return res.status(400).json({ error: 'Debes adjuntar hoja de vida, documento de identidad y fotografía.' });
+  }
+
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    let id = Number(idPostulante || idAspirante);
-    if (!id) { const names = splitName(nombreCompleto || nombre); const user = await client.query('SELECT id_aspirante FROM aspirante WHERE correo = $1 OR numero_documento = $2 LIMIT 1', [email || correo, cedula || numeroDocumento]); if (user.rowCount) id = user.rows[0].id_aspirante; else { const created = await client.query('INSERT INTO aspirante (tipo_documento, numero_documento, nombre_completo, correo, telefono, direccion, sexo, fecha_registro, activo) VALUES ($1,$2,$3,$4,$5,$6,$7,CURRENT_DATE,true) RETURNING id_aspirante', ['CC', cedula || numeroDocumento, `${names.nombre} ${apellido || names.apellido}`.trim(), email || correo, telefono, ciudad || direccion, sexo]); id = created.rows[0].id_aspirante; } }
-    if (id && sexo) await client.query('UPDATE aspirante SET sexo = $1 WHERE id_aspirante = $2', [sexo, id]);
-    let vacancyId = idVacante;
-    if (!vacancyId && cargo) { const found = await client.query(`SELECT id_vacante FROM vacante WHERE LOWER(nombre_cargo) = LOWER($1) AND LOWER(estado) IN ('abierta','activo','activa') ORDER BY id_vacante DESC LIMIT 1`, [cargo]); if (!found.rowCount) throw Object.assign(new Error('No hay una vacante abierta para ese cargo.'), { status: 400 }); vacancyId = found.rows[0].id_vacante; }
-    if (!id || !vacancyId) throw Object.assign(new Error('El aspirante y la vacante son obligatorios.'), { status: 400 });
-    const post = await client.query(`INSERT INTO postulacion (id_aspirante, id_vacante, fecha_postulacion, estado) VALUES ($1,$2,CURRENT_DATE,'EN_REVISION') RETURNING *`, [id, vacancyId]);
-    for (const doc of documentos) {
-      const archivo = String(doc.archivo || doc.rutaArchivo || 'pendiente');
-      if (archivo.length > 8 * 1024 * 1024) throw Object.assign(new Error('Uno de los documentos supera el límite permitido.'), { status: 413 });
-      await client.query('INSERT INTO documento (nombre_documento, tipo_documento, archivo, id_aspirante) VALUES ($1,$2,$3,$4)', [doc.nombreArchivo || doc.nombreDocumento || 'Documento', doc.tipoDocumento || doc.tipoArchivo || 'PDF', archivo, id]);
+    const vacancy = await client.query(
+      `SELECT id_vacante FROM vacante
+       WHERE id_vacante = $1 AND LOWER(TRIM(estado)) IN ('abierta','activo','activa')
+       FOR SHARE`,
+      [Number(body.idVacante)]
+    );
+    if (!vacancy.rowCount) throw Object.assign(new Error('La vacante seleccionada ya no está disponible.'), { status: 400 });
+
+    let aspiranteId = Number(body.idPostulante || body.idAspirante) || null;
+    if (aspiranteId) {
+      const existing = await client.query('SELECT id_aspirante FROM aspirante WHERE id_aspirante=$1 FOR UPDATE', [aspiranteId]);
+      if (!existing.rowCount) throw Object.assign(new Error('El aspirante indicado no existe.'), { status: 404 });
+    } else {
+      const matches = await client.query(
+        `SELECT id_aspirante, numero_documento, correo FROM aspirante
+         WHERE numero_documento=$1 OR LOWER(correo)=LOWER($2) FOR UPDATE`,
+        [documentoFinal, correoFinal]
+      );
+      if (matches.rowCount > 1) throw Object.assign(new Error('El documento y el correo están asociados a aspirantes diferentes. Contacta a Recursos Humanos.'), { status: 409 });
+      if (matches.rowCount === 1) {
+        const match = matches.rows[0];
+        if ((match.numero_documento && match.numero_documento !== documentoFinal) ||
+            (match.correo && match.correo.toLowerCase() !== correoFinal)) {
+          throw Object.assign(new Error('El documento o el correo ya está registrado con datos diferentes.'), { status: 409 });
+        }
+        aspiranteId = match.id_aspirante;
+      }
     }
-    await client.query('COMMIT'); res.status(201).json({ idPostulacion: post.rows[0].id_postulacion, ...post.rows[0] });
-  } catch (error) { await client.query('ROLLBACK'); errorResponse(res, error, 'No fue posible registrar la postulación.'); } finally { client.release(); }
+
+    if (aspiranteId) {
+      await client.query(
+        `UPDATE aspirante SET nombre_completo=$1, numero_documento=$2, correo=$3, telefono=$4,
+         direccion=COALESCE(NULLIF($5,''), ciudad, ''), ciudad=$6, fecha_nacimiento=$7, sexo=$8,
+         experiencia=$9, descripcion_experiencia=$10, autorizacion_datos=true,
+         autorizacion_datos_fecha=CURRENT_TIMESTAMP WHERE id_aspirante=$11`,
+        [nombreFinal, documentoFinal, correoFinal, telefonoFinal, body.direccion || '', ciudadFinal,
+          fechaNacimiento, sexo, experiencia, descripcion, aspiranteId]
+      );
+    } else {
+      const created = await client.query(
+        `INSERT INTO aspirante
+         (tipo_documento, numero_documento, nombre_completo, correo, telefono, direccion, ciudad,
+          fecha_nacimiento, sexo, experiencia, descripcion_experiencia, autorizacion_datos,
+          autorizacion_datos_fecha, fecha_registro, activo)
+         VALUES ('CC',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true,CURRENT_TIMESTAMP,CURRENT_DATE,true)
+         RETURNING id_aspirante`,
+        [documentoFinal, nombreFinal, correoFinal, telefonoFinal, body.direccion || ciudadFinal,
+          ciudadFinal, fechaNacimiento, sexo, experiencia, descripcion]
+      );
+      aspiranteId = created.rows[0].id_aspirante;
+    }
+
+    const duplicate = await client.query(
+      `SELECT id_postulacion FROM postulacion
+       WHERE id_aspirante=$1 AND id_vacante=$2
+         AND estado NOT IN ('RECHAZADO','RECHAZADO_RRHH','CONTRATADO')
+       LIMIT 1 FOR UPDATE`,
+      [aspiranteId, Number(body.idVacante)]
+    );
+    if (duplicate.rowCount) throw Object.assign(new Error(`Ya existe una postulación activa para esta vacante. Radicado: SID-${duplicate.rows[0].id_postulacion}.`), { status: 409 });
+
+    const post = await client.query(
+      `INSERT INTO postulacion (id_aspirante,id_vacante,fecha_postulacion,estado)
+       VALUES ($1,$2,CURRENT_DATE,'EN_REVISION') RETURNING *`,
+      [aspiranteId, Number(body.idVacante)]
+    );
+
+    for (const doc of documentos) {
+      const archivo = String(doc.archivo || doc.rutaArchivo || '');
+      if (!archivo || archivo.length > 8 * 1024 * 1024) {
+        throw Object.assign(new Error('Uno de los documentos está vacío o supera el límite permitido de 8 MB.'), { status: 413 });
+      }
+      await client.query(
+        'INSERT INTO documento (nombre_documento,tipo_documento,archivo,id_aspirante) VALUES ($1,$2,$3,$4)',
+        [String(doc.nombreArchivo || doc.nombreDocumento || 'Documento').slice(0,120),
+          String(doc.tipoDocumento || doc.tipoArchivo || 'PDF').slice(0,50), archivo, aspiranteId]
+      );
+    }
+    await client.query(
+      `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle)
+       VALUES ($1,NULL,'EN_REVISION','Postulación recibida y documentos registrados.')`,
+      [post.rows[0].id_postulacion]
+    );
+    await client.query('COMMIT');
+    res.status(201).json({ idPostulacion: post.rows[0].id_postulacion, ...post.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res, error, 'No fue posible registrar la postulación.');
+  } finally {
+    client.release();
+  }
 });
 
 const ESTADOS_POSTULACION_DB = {
-  'EN PROCESO': 'EN_REVISION',
-  'EN REVISION': 'EN_REVISION',
-  'EN_REVISION': 'EN_REVISION',
-
-  'HOJA VIDA APROBADA': 'APROBADO_RRHH',
-  'HOJA_VIDA_APROBADA': 'APROBADO_RRHH',
-
-  'APROBADO RRHH': 'APROBADO_RRHH',
-  'APROBADO_RRHH': 'APROBADO_RRHH',
-
-  'RECHAZADO RRHH': 'RECHAZADO_RRHH',
-  'RECHAZADO_RRHH': 'RECHAZADO_RRHH',
-
-  'ENTREVISTA': 'ENTREVISTA',
-  'ENTREVISTA PENDIENTE': 'ENTREVISTA',
-  'ENTREVISTA_PENDIENTE': 'ENTREVISTA',
-
-  'ENTREVISTA AGENDADA': 'ENTREVISTA',
-  'ENTREVISTA_AGENDADA': 'ENTREVISTA',
-
-  'ENTREVISTA APROBADA': 'APROBADO',
-  'ENTREVISTA_APROBADA': 'APROBADO',
-
-  'ENTREVISTA RECHAZADA': 'RECHAZADO',
-  'ENTREVISTA_RECHAZADA': 'RECHAZADO',
-
-  'EXAMENES PENDIENTES': 'APROBADO',
-  'EXAMENES_PENDIENTES': 'APROBADO',
-
-  'EXAMENES AGENDADOS': 'APROBADO',
-  'EXAMENES_AGENDADOS': 'APROBADO',
-
-  'EXAMENES PROGRAMADOS': 'APROBADO',
-  'EXAMENES_PROGRAMADOS': 'APROBADO',
-
-  'EXAMENES EN REVISION': 'APROBADO',
-  'EXAMENES_EN_REVISION': 'APROBADO',
-
-  'EXAMENES APROBADOS': 'APROBADO',
-  'EXAMENES_APROBADOS': 'APROBADO',
-
-  'PENDIENTE CONTRATO': 'APROBADO',
-  'PENDIENTE_CONTRATO': 'APROBADO',
-
-  'FIRMA CONTRATO AGENDADA': 'APROBADO',
-  'FIRMA_CONTRATO_AGENDADA': 'APROBADO',
-
-  'APROBADO': 'APROBADO',
-
-  'RECHAZADO': 'RECHAZADO',
-
-  'CANCELADO': 'RECHAZADO',
-
-  'CONTRATO': 'CONTRATADO',
-  'CONTRATADO': 'CONTRATADO'
+  EN_REVISION: 'EN_REVISION',
+  APROBADO_RRHH: 'APROBADO_RRHH',
+  HOJA_VIDA_APROBADA: 'APROBADO_RRHH',
+  ENTREVISTA_PENDIENTE: 'APROBADO_RRHH',
+  RECHAZADO_RRHH: 'RECHAZADO_RRHH',
+  RECHAZADO: 'RECHAZADO_RRHH'
 };
+
 function normalizarEstadoPostulacion(value) {
-  const normalized = String(value || '').trim().toUpperCase().replace(/_/g, ' ');
+  const normalized = String(value || '').trim().toUpperCase()
+    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/[\\s-]+/g, '_');
   return ESTADOS_POSTULACION_DB[normalized] || null;
 }
 
-app.patch('/api/postulaciones/:id', async (req, res) => {
-  const estadoRecibido = req.body.estado || req.body.estadoPostulacion;
-  const estadoNormalizado = normalizarEstadoPostulacion(estadoRecibido);
+app.patch('/api/postulaciones/:id', requireRoles('RRHH'), async (req, res) => {
+  const estado = normalizarEstadoPostulacion(req.body.estado || req.body.estadoPostulacion);
+  const id = Number(req.params.id);
+  const motivo = String(req.body.motivoRechazo || req.body.motivo || '').trim();
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'El ID de la postulación no es válido.' });
+  if (!estado) return res.status(400).json({ error: 'Desde esta pantalla solo puedes mantener en revisión, aprobar la hoja de vida o rechazarla.' });
+  if (estado === 'RECHAZADO_RRHH' && !motivo) return res.status(400).json({ error: 'Debes indicar el motivo del rechazo.' });
 
-  if (!estadoNormalizado) {
-    return res.status(400).json({
-      error: 'Estado de postulación no válido.'
-    });
-  }
-
-  const idPostulacion = Number(req.params.id);
-
-  if (!Number.isInteger(idPostulacion)) {
-    return res.status(400).json({
-      error: 'El ID de la postulación no es válido.'
-    });
-  }
-
-  const motivoRechazo =
-      req.body.motivoRechazo ||
-      req.body.motivo ||
-      null;
-
+  const client = await db.connect();
   try {
-    const result = await db.query(
-        `UPDATE postulacion
-       SET estado = $1::text,
-           fecha_rechazo = CASE
-             WHEN $1::text = 'RECHAZADO'
-             THEN CURRENT_DATE
-             ELSE fecha_rechazo
-           END,
-           motivo_rechazo = CASE
-             WHEN $1::text = 'RECHAZADO'
-             THEN COALESCE($3::text, motivo_rechazo, '')
-             ELSE motivo_rechazo
-           END
-       WHERE id_postulacion = $2::integer
-       RETURNING *`,
-        [
-          estadoNormalizado,
-          idPostulacion,
-          motivoRechazo
-        ]
-    );
-
-    if (!result.rowCount) {
-      return res.status(404).json({
-        error: 'Postulación no encontrada.'
-      });
+    await client.query('BEGIN');
+    const current = await client.query('SELECT estado FROM postulacion WHERE id_postulacion=$1 FOR UPDATE', [id]);
+    if (!current.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Postulación no encontrada.' });
     }
-
-    res.json(result.rows[0]);
-
-  } catch (error) {
-    errorResponse(
-        res,
-        error,
-        'No fue posible actualizar el estado.'
+    const previous = current.rows[0].estado;
+    if (previous !== 'EN_REVISION' && previous !== estado) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Esta postulación ya avanzó a otra etapa y no puede modificarse desde la revisión inicial.' });
+    }
+    const updated = await client.query(
+      `UPDATE postulacion SET estado=$1,
+       motivo_rechazo=CASE WHEN $1='RECHAZADO_RRHH' THEN $2 ELSE motivo_rechazo END,
+       fecha_rechazo=CASE WHEN $1='RECHAZADO_RRHH' THEN CURRENT_DATE ELSE fecha_rechazo END
+       WHERE id_postulacion=$3 RETURNING *`,
+      [estado, motivo, id]
     );
+    if (previous !== estado) {
+      await client.query(
+        `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [id, previous, estado, estado === 'APROBADO_RRHH' ? 'Hoja de vida aprobada por Recursos Humanos.' : motivo, req.session.id_usuario]
+      );
+    }
+    await client.query('COMMIT');
+    res.json(updated.rows[0]);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res, error, 'No fue posible actualizar el estado de la postulación.');
+  } finally {
+    client.release();
   }
 });
-
 
 app.patch('/api/postulaciones/:id/datos', async (req, res) => {
   const {
