@@ -32,7 +32,7 @@ function accionesProceso(p) {
   }
   acciones.push(`<button class="btn-xs btn-xs-blue editar" data-id="${p.id_postulacion}">Editar</button>`);
   if (p.estado === 'APROBADO_RRHH') acciones.push(`<a class="btn-xs btn-xs-blue" href="agenda.html?idPostulacion=${p.id_postulacion}">Agendar entrevista</a>`);
-  if (p.estado === 'EXAMENES_PENDIENTES' || p.estado === 'APROBADO') acciones.push('<a class="btn-xs btn-xs-blue" href="examenes.html">Programar exámenes</a>');
+  if (p.estado === 'EXAMENES_PENDIENTES') acciones.push('<a class="btn-xs btn-xs-blue" href="examenes.html">Programar exámenes</a>');
   acciones.push(`<button class="btn-xs btn-xs-red eliminar" data-id="${p.id_postulacion}">Eliminar</button>`);
   return acciones.join('');
 }
