@@ -1,0 +1,35 @@
+name: Validación de SIDOVI
+
+on:
+  push:
+    branches: [master, auditoria-sintaxis]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar sintaxis de todos los archivos JavaScript
+        run: |
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 |
+            xargs -0 -r -n1 node --check
+
+      - name: Ejecutar pruebas Jest
+        run: npm run test:jest
+
+      - name: Ejecutar pruebas Vitest del backend
+        run: npx vitest run server/*.test.ts
