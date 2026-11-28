@@ -892,7 +892,46 @@ WHERE id_aspirante = $6`,
 
 
 app.delete('/api/postulaciones/:id', requireRoles('RRHH'), async (req, res) => {
-  const client = await db.connect(); try { await client.query('BEGIN'); const p = await client.query('SELECT id_aspirante FROM postulacion WHERE id_postulacion = $1', [req.params.id]); if (!p.rowCount) return res.status(404).json({ error: 'Postulación no encontrada.' }); const id = p.rows[0].id_aspirante; await client.query('DELETE FROM evaluacion WHERE id_entrevista IN (SELECT id_entrevista FROM entrevista WHERE id_postulacion = $1)', [req.params.id]); await client.query('DELETE FROM entrevista WHERE id_postulacion = $1', [req.params.id]); await client.query('DELETE FROM evidencia WHERE id_postulacion = $1', [req.params.id]); await client.query('DELETE FROM postulacion WHERE id_postulacion = $1', [req.params.id]); await client.query('DELETE FROM documento WHERE id_aspirante = $1', [id]); await client.query('DELETE FROM aspirante WHERE id_aspirante = $1', [id]); await client.query('COMMIT'); res.status(204).end(); } catch (error) { await client.query('ROLLBACK'); errorResponse(res, error, 'No fue posible eliminar la postulación.'); } finally { client.release(); }
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const post = await client.query(
+      'SELECT id_aspirante,estado FROM postulacion WHERE id_postulacion=$1 FOR UPDATE',
+      [req.params.id]
+    );
+    if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
+    const aspiranteId = post.rows[0].id_aspirante;
+    const contract = await client.query(
+      'SELECT id_contrato,estado FROM contrato WHERE id_postulacion=$1 LIMIT 1',
+      [req.params.id]
+    );
+    if (contract.rowCount || ['CONTRATO_GENERADO','CONTRATADO'].includes(post.rows[0].estado)) {
+      throw Object.assign(new Error('No se puede eliminar una postulación que ya tiene un contrato generado o firmado.'), { status: 409 });
+    }
+    await client.query(
+      'DELETE FROM evaluacion WHERE id_entrevista IN (SELECT id_entrevista FROM entrevista WHERE id_postulacion=$1)',
+      [req.params.id]
+    );
+    await client.query('DELETE FROM entrevista WHERE id_postulacion=$1', [req.params.id]);
+    await client.query('DELETE FROM evidencia WHERE id_postulacion=$1', [req.params.id]);
+    await client.query('DELETE FROM postulacion WHERE id_postulacion=$1', [req.params.id]);
+
+    const otherApplications = await client.query(
+      'SELECT 1 FROM postulacion WHERE id_aspirante=$1 LIMIT 1',
+      [aspiranteId]
+    );
+    if (!otherApplications.rowCount) {
+      await client.query('DELETE FROM documento WHERE id_aspirante=$1', [aspiranteId]);
+      await client.query('DELETE FROM aspirante WHERE id_aspirante=$1', [aspiranteId]);
+    }
+    await client.query('COMMIT');
+    res.status(204).end();
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res,error,'No fue posible eliminar la postulación.');
+  } finally {
+    client.release();
+  }
 });
 
 app.get('/api/entrevistas', requireRoles('RRHH', 'Gerente'), async (_req, res) => {
@@ -1065,7 +1104,8 @@ app.patch('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, r
     PROGRAMADA: 'PROGRAMADA',
     REALIZADA: 'REALIZADA',
     CANCELADA: 'CANCELADA'
-  }[estadoRecibido] || 'PROGRAMADA';
+  }[estadoRecibido];
+  if (!estadoDB) return res.status(400).json({ error: 'El estado de la entrevista no es válido.' });
 
   const modalidadDB = modalidad
       ? (
@@ -1579,6 +1619,16 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
       idPostulacion,
       contratoYaGenerado
     ]);
+
+    await db.query(
+      `INSERT INTO historial_proceso
+       (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [idPostulacion, estadoActual,
+        contratoYaGenerado ? 'CONTRATO_GENERADO' : 'FIRMA_CONTRATO_AGENDADA',
+        `Firma ${esReprogramacion ? 'reprogramada' : 'programada'} para el ${fecha} a las ${hora}.`,
+        req.session.id_usuario]
+    );
 
     // ========================================================
     // SINCRONIZAR AGENDA CON EL CONTRATO SI YA EXISTE
@@ -5456,6 +5506,9 @@ app.post('/api/evaluaciones/detallada', requireRoles('Gerente'), async (req, res
     );
     if (!entrevistaResult.rowCount) {
       throw Object.assign(new Error('No se encontró la entrevista indicada.'), { status: 404 });
+    }
+    if (entrevistaResult.rows[0].estado_actual !== 'ENTREVISTA') {
+      throw Object.assign(new Error('La postulación ya salió de la etapa de entrevista y no admite otra evaluación.'), { status: 409 });
     }
 
     const ev = await client.query(
