@@ -1180,22 +1180,20 @@ app.patch('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, r
        ACTUALIZAR
     ===================================================== */
 
+    const evaluacionExistente = await db.query(
+      'SELECT id_evaluacion FROM evaluacion WHERE id_entrevista=$1 LIMIT 1',
+      [Number(req.params.id)]
+    );
+    if (evaluacionExistente.rowCount) {
+      return res.status(409).json({ error: 'La entrevista ya tiene una evaluación registrada y no se puede reprogramar ni cancelar.' });
+    }
+
     const result = await db.query(`
       UPDATE entrevista
-      SET
-        fecha_entrevista = $1,
-        modalidad = COALESCE($2, modalidad),
-        observacion = $3,
-        estado = $4
-      WHERE id_entrevista = $5
-      RETURNING *
-    `, [
-      fechaHoraEntrevista,
-      modalidadDB,
-      observaciones,
-      estadoDB,
-      Number(req.params.id)
-    ]);
+      SET fecha_entrevista=$1, modalidad=COALESCE($2,modalidad),
+          observacion=$3, estado=$4
+      WHERE id_entrevista=$5 RETURNING *
+    `, [fechaHoraEntrevista, modalidadDB, observaciones, estadoDB, Number(req.params.id)]);
 
 
     if (!result.rowCount) {
@@ -1206,9 +1204,25 @@ app.patch('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, r
     }
 
 
-    const entrevista =
-        result.rows[0];
-
+    const entrevista = result.rows[0];
+    const postState = estadoDB === 'CANCELADA' ? 'APROBADO_RRHH' : 'ENTREVISTA';
+    const previousPost = await db.query(
+      'SELECT estado FROM postulacion WHERE id_postulacion=$1',
+      [entrevista.id_postulacion]
+    );
+    await db.query(
+      'UPDATE postulacion SET estado=$1 WHERE id_postulacion=$2',
+      [postState, entrevista.id_postulacion]
+    );
+    if (previousPost.rowCount && previousPost.rows[0].estado !== postState) {
+      await db.query(
+        `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [entrevista.id_postulacion, previousPost.rows[0].estado, postState,
+          estadoDB === 'CANCELADA' ? 'Entrevista cancelada; vuelve a programación.' : 'Entrevista reprogramada.',
+          req.session.id_usuario]
+      );
+    }
 
     /* =====================================================
        RESPUESTA
@@ -1252,21 +1266,35 @@ app.patch('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, r
 });
 
 app.delete('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, res) => {
+  const client = await db.connect();
   try {
-    const result = await db.query(
-        `DELETE FROM entrevista
-       WHERE id_seleccionado = $1
-       RETURNING id_seleccionado`,
-        [req.params.id]
+    await client.query('BEGIN');
+    const interview = await client.query(
+      'SELECT id_postulacion FROM entrevista WHERE id_entrevista=$1 FOR UPDATE',
+      [req.params.id]
     );
-
-    if (!result.rowCount) {
-      return res.status(404).json({ error: 'Entrevista no encontrada.' });
-    }
-
+    if (!interview.rowCount) throw Object.assign(new Error('Entrevista no encontrada.'), { status: 404 });
+    const evaluation = await client.query(
+      'SELECT id_evaluacion FROM evaluacion WHERE id_entrevista=$1 LIMIT 1',
+      [req.params.id]
+    );
+    if (evaluation.rowCount) throw Object.assign(new Error('No puedes eliminar una entrevista que ya tiene una evaluación registrada.'), { status: 409 });
+    const postId = interview.rows[0].id_postulacion;
+    const post = await client.query('SELECT estado FROM postulacion WHERE id_postulacion=$1 FOR UPDATE', [postId]);
+    await client.query('DELETE FROM entrevista WHERE id_entrevista=$1', [req.params.id]);
+    await client.query("UPDATE postulacion SET estado='APROBADO_RRHH' WHERE id_postulacion=$1", [postId]);
+    await client.query(
+      `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+       VALUES ($1,$2,'APROBADO_RRHH','Entrevista eliminada; la postulación vuelve a estar disponible para programación.',$3)`,
+      [postId, post.rows[0]?.estado || 'ENTREVISTA', req.session.id_usuario]
+    );
+    await client.query('COMMIT');
     res.status(204).end();
   } catch (error) {
+    await client.query('ROLLBACK');
     errorResponse(res, error, 'No fue posible eliminar la entrevista.');
+  } finally {
+    client.release();
   }
 });
 
@@ -5406,7 +5434,7 @@ app.post('/api/evaluaciones/detallada', requireRoles('Gerente'), async (req, res
         ? 'EXAMENES_PENDIENTES'
         : resultado === 'RECHAZADO'
             ? 'RECHAZADO'
-            : 'ENTREVISTA_AGENDADA';
+            : 'ENTREVISTA';
     const postulacionId = entrevistaResult.rows[0].id_postulacion;
     const estadoAnterior = entrevistaResult.rows[0].estado_actual;
     const postulacionResult = await client.query(
@@ -5654,137 +5682,79 @@ app.post('/api/examenes/:id/documentos', requireRoles('RRHH'), async (req, res) 
 // ============================================================
 
 app.post('/api/examenes/:id/verificar', requireRoles('RRHH'), async (req, res) => {
-  const { resultado, motivoRechazo = '', observaciones = '' } = req.body;
-
-  if (!['APROBADO', 'RECHAZADO', 'PENDIENTE'].includes(resultado)) {
-    return res.status(400).json({
-      error: 'Resultado inválido.'
-    });
+  const { resultado, motivoRechazo = '', observaciones = '' } = req.body || {};
+  if (!['APROBADO','RECHAZADO','PENDIENTE'].includes(resultado)) {
+    return res.status(400).json({ error: 'Resultado inválido.' });
+  }
+  if (resultado === 'RECHAZADO' && !String(motivoRechazo).trim()) {
+    return res.status(400).json({ error: 'El motivo del rechazo es obligatorio.' });
   }
 
-  if (
-      resultado === 'RECHAZADO' &&
-      !String(motivoRechazo).trim()
-  ) {
-    return res.status(400).json({
-      error: 'El motivo del rechazo es obligatorio.'
-    });
-  }
-
+  const client = await db.connect();
   try {
-    // 1. Buscar el examen y su postulación
-    const examenResult = await db.query(`
-      SELECT
-        ep.id_examen,
-        ep.id_postulacion,
-        ep.documentos_resultado
-      FROM examen_programado ep
-      WHERE ep.id_examen = $1
-    `, [req.params.id]);
-
-    if (examenResult.rowCount === 0) {
-      return res.status(404).json({
-        error: 'Examen no encontrado.'
-      });
-    }
-
-    const examen = examenResult.rows[0];
-
-    // 2. Verificar que existan resultados cargados
-    const documentos = examen.documentos_resultado;
-
-    if (
-        !Array.isArray(documentos) ||
-        documentos.length === 0
-    ) {
-      return res.status(400).json({
-        error: 'No se puede verificar el examen porque todavía no se ha cargado el resultado.'
-      });
-    }
-
-    // 3. Determinar estado del examen
-    let estadoExamen;
-
-    if (resultado === 'APROBADO') {
-      estadoExamen = 'APROBADO';
-    } else if (resultado === 'RECHAZADO') {
-      estadoExamen = 'RECHAZADO';
-    } else {
-      estadoExamen = 'EN_REVISION';
-    }
-
-    // 4. Actualizar examen
-    const examenActualizado = await db.query(`
-      UPDATE examen_programado
-      SET
-        resultado = $1,
-        motivo_rechazo = $2,
-        observaciones_rrhh = $3,
-        fecha_verificacion = CURRENT_TIMESTAMP,
-        verificado_por = $4,
-        estado = $5
-      WHERE id_examen = $6
-      RETURNING *
-    `, [
-      resultado,
-      resultado === 'RECHAZADO'
-          ? String(motivoRechazo).trim()
-          : '',
-      String(observaciones).trim(),
-      req.session.id_usuario,
-      estadoExamen,
-      req.params.id
-    ]);
-
-    // 5. CAMBIAR ESTADO DE LA POSTULACIÓN
-    let nuevoEstado;
-
-    if (resultado === 'APROBADO') {
-      nuevoEstado = 'PENDIENTE_CONTRATO';
-    } else if (resultado === 'RECHAZADO') {
-      nuevoEstado = 'RECHAZADO';
-    } else {
-      nuevoEstado = 'EXAMENES_EN_REVISION';
-    }
-    await db.query(`
-  UPDATE postulacion
-  SET
-    estado = $1::text,
-    motivo_rechazo = $2::text,
-    fecha_rechazo = CASE
-      WHEN $1::text = 'RECHAZADO'
-      THEN CURRENT_DATE
-      ELSE fecha_rechazo
-    END
-  WHERE id_postulacion = $3::integer
-`, [
-      String(nuevoEstado),
-      resultado === 'RECHAZADO'
-          ? String(motivoRechazo).trim()
-          : '',
-      Number(examen.id_postulacion)
-    ]);
-    const mensaje =
-        resultado === 'APROBADO'
-            ? 'El resultado de los exámenes fue aprobado. La postulación quedó pendiente para programar la firma del contrato.'
-            : resultado === 'RECHAZADO'
-                ? 'El resultado de los exámenes fue rechazado.'
-                : 'El resultado de los exámenes quedó en revisión.';
-    // 7. Respuesta
-    res.json({
-      ...examenActualizado.rows[0],
-      estado_postulacion: nuevoEstado,
-      mensaje
-    });
-
-  } catch (error) {
-    console.error('Error verificando examen:', error);
-
-    errorResponse(
-        res,
-        error,
-        'No fue posible verificar el resultado del examen.'
+    await client.query('BEGIN');
+    const found = await client.query(
+      `SELECT ex.*, p.estado AS estado_postulacion
+       FROM examen_programado ex
+       JOIN postulacion p ON p.id_postulacion=ex.id_postulacion
+       WHERE ex.id_examen=$1
+       FOR UPDATE OF ex,p`,
+      [req.params.id]
     );
+    if (!found.rowCount) throw Object.assign(new Error('Examen no encontrado.'), { status: 404 });
+    const exam = found.rows[0];
+    if (exam.estado !== 'EN_REVISION') {
+      throw Object.assign(new Error('Solo puedes verificar exámenes que tengan resultados cargados y estén en revisión.'), { status: 409 });
+    }
+    const docs = Array.isArray(exam.documentos_resultado) ? exam.documentos_resultado : [];
+    if (!docs.length) throw Object.assign(new Error('No se puede verificar el examen porque todavía no se ha cargado el resultado.'), { status: 400 });
+
+    const examState = resultado === 'PENDIENTE' ? 'EN_REVISION' : resultado;
+    const postState = resultado === 'APROBADO' ? 'PENDIENTE_CONTRATO'
+      : resultado === 'RECHAZADO' ? 'RECHAZADO' : 'EXAMENES_EN_REVISION';
+
+    const updatedExam = await client.query(
+      `UPDATE examen_programado
+       SET resultado=$1, motivo_rechazo=$2, observaciones_rrhh=$3,
+           fecha_verificacion=CURRENT_TIMESTAMP, verificado_por=$4, estado=$5
+       WHERE id_examen=$6 RETURNING *`,
+      [resultado, resultado === 'RECHAZADO' ? String(motivoRechazo).trim() : '',
+        String(observaciones).trim(), req.session.id_usuario, examState, req.params.id]
+    );
+    await client.query(
+      `UPDATE postulacion
+       SET estado=$1, motivo_rechazo=$2,
+           fecha_rechazo=CASE WHEN $1='RECHAZADO' THEN CURRENT_DATE ELSE fecha_rechazo END
+       WHERE id_postulacion=$3`,
+      [postState, resultado === 'RECHAZADO' ? String(motivoRechazo).trim() : '', exam.id_postulacion]
+    );
+    if (exam.estado_postulacion !== postState) {
+      await client.query(
+        `INSERT INTO historial_proceso
+         (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [exam.id_postulacion, exam.estado_postulacion, postState,
+          resultado === 'RECHAZADO' ? String(motivoRechazo).trim()
+            : resultado === 'APROBADO' ? 'Resultados de exámenes aprobados por Recursos Humanos.'
+              : 'Resultados de exámenes pendientes de decisión.',
+          req.session.id_usuario]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({
+      ...updatedExam.rows[0],
+      estado_postulacion: postState,
+      mensaje: resultado === 'APROBADO'
+        ? 'Los exámenes fueron aprobados. La postulación quedó habilitada para programar la firma.'
+        : resultado === 'RECHAZADO'
+          ? 'Los exámenes fueron rechazados.'
+          : 'Los exámenes continúan en revisión.'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res, error, 'No fue posible verificar el resultado del examen.');
+  } finally {
+    client.release();
   }
 });
 
