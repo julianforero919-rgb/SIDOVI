@@ -1000,7 +1000,7 @@ app.get('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, res
       JOIN vacante v ON v.id_vacante = p.id_vacante
       LEFT JOIN sede s ON s.id_sede = v.id_sede
       LEFT JOIN usuario u ON u.id_usuario = e.id_gerente
-      WHERE e.id_entrevista = $1 OR e.id_postulacion = $1
+      WHERE e.id_entrevista = $1
       ORDER BY e.id_entrevista DESC
       LIMIT 1
     `, [req.params.id]);
