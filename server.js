@@ -1298,6 +1298,7 @@ app.get('/api/contratos/:id', async (req, res) => {
   catch (error) { errorResponse(res, error, 'No fue posible consultar el contrato.'); }
 });
 
+
 app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
   const {
     idPostulacion,
@@ -1316,11 +1317,16 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
   }
 
   try {
-    // Verificar que la persona esté lista para contratación
+    // Verificar que la persona esté lista para contratación.
     const post = await db.query(`
       SELECT
         p.id_postulacion,
         p.estado,
+        p.fecha_firma_programada,
+        p.hora_firma,
+        p.lugar_firma,
+        p.direccion_firma,
+        p.responsable_firma,
         a.nombre_completo,
         a.numero_documento,
         a.correo,
@@ -1337,8 +1343,8 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
         ON s.id_sede = v.id_sede
       WHERE p.id_postulacion = $1
         AND p.estado IN (
-                         'PENDIENTE_CONTRATO',
-                         'FIRMA_CONTRATO_AGENDADA'
+          'PENDIENTE_CONTRATO',
+          'FIRMA_CONTRATO_AGENDADA'
         )
     `, [idPostulacion]);
 
@@ -1348,7 +1354,7 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
       });
     }
 
-    // Evitar contratos duplicados
+    // Evitar contratos duplicados.
     const existente = await db.query(
         'SELECT id_contrato FROM contrato WHERE id_postulacion = $1',
         [idPostulacion]
@@ -1361,6 +1367,7 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
       });
     }
 
+    // Crear el contrato conservando la agenda de firma.
     const result = await db.query(`
       INSERT INTO contrato (
         id_postulacion,
@@ -1369,9 +1376,14 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
         tipo_contrato,
         salario,
         estado,
-        observaciones
+        observaciones,
+        fecha_firma_programada,
+        hora_firma,
+        lugar_firma,
+        direccion_firma,
+        responsable_firma
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
       idPostulacion,
@@ -1380,15 +1392,23 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
       tipoContrato,
       salario,
       estado,
-      observaciones
+      observaciones,
+      post.rows[0].fecha_firma_programada,
+      post.rows[0].hora_firma,
+      post.rows[0].lugar_firma,
+      post.rows[0].direccion_firma,
+      post.rows[0].responsable_firma
     ]);
 
+    // Actualizar el estado de la postulación.
     await db.query(
-        `UPDATE postulacion SET estado = 'CONTRATADO' WHERE id_postulacion = $1`,
+        `UPDATE postulacion
+       SET estado = 'CONTRATADO'
+       WHERE id_postulacion = $1`,
         [idPostulacion]
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       ...result.rows[0],
       candidato: post.rows[0]
     });
@@ -1397,16 +1417,6 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
     errorResponse(res, error, 'No fue posible crear el contrato.');
   }
 });
-
-// ============================================================
-// PROGRAMAR FIRMA DE CONTRATO
-// Gerencia agenda la firma después de que RRHH aprueba
-// los exámenes médicos.
-// ============================================================
-// ============================================================
-// PROGRAMAR / REPROGRAMAR FIRMA DE CONTRATO
-// RRHH o Gerencia pueden programar y reprogramar.
-// ============================================================
 
 app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (req, res) => {
 
@@ -1431,38 +1441,45 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
     // VERIFICAR LA POSTULACIÓN
     // ========================================================
 
+
     const post = await db.query(`
-      SELECT
-        p.id_postulacion,
-        p.estado,
-        p.fecha_firma_programada,
-        p.hora_firma,
-        p.lugar_firma,
-        p.direccion_firma,
-        a.nombre_completo,
-        a.correo,
-        a.telefono,
-        v.nombre_cargo AS cargo,
-        s.nombre_sede
-      FROM postulacion p
-
-      JOIN aspirante a
-        ON a.id_aspirante = p.id_aspirante
-
-      JOIN vacante v
-        ON v.id_vacante = p.id_vacante
-
-      LEFT JOIN sede s
-        ON s.id_sede = v.id_sede
-
-      WHERE p.id_postulacion = $1
-    `, [idPostulacion]);
+  SELECT
+    p.id_postulacion,
+    p.estado,
+    p.fecha_firma_programada,
+    p.hora_firma,
+    p.lugar_firma,
+    p.direccion_firma,
+    p.responsable_firma,
+    a.nombre_completo,
+    a.numero_documento,
+    a.correo,
+    a.telefono,
+    a.direccion,
+    v.nombre_cargo AS cargo,
+    s.nombre_sede
+  FROM postulacion p
+  JOIN aspirante a
+    ON a.id_aspirante = p.id_aspirante
+  JOIN vacante v
+    ON v.id_vacante = p.id_vacante
+  LEFT JOIN sede s
+    ON s.id_sede = v.id_sede
+  WHERE p.id_postulacion = $1
+    AND p.estado IN (
+      'PENDIENTE_CONTRATO',
+      'FIRMA_CONTRATO_AGENDADA'
+    )
+`, [idPostulacion]);
 
     if (!post.rowCount) {
-      return res.status(404).json({
-        error: 'La postulación no fue encontrada.'
+      return res.status(400).json({
+        error: 'La persona todavía no está habilitada para generar el contrato.'
       });
     }
+
+
+
 
     const candidato = post.rows[0];
 
@@ -1532,17 +1549,38 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
       idPostulacion
     ]);
 
+    // ========================================================
+    // SINCRONIZAR AGENDA CON EL CONTRATO SI YA EXISTE
+    // ========================================================
+
+    await db.query(`
+      UPDATE contrato
+      SET
+        fecha_firma_programada = $1,
+        hora_firma = $2,
+        lugar_firma = $3,
+        direccion_firma = $4,
+        responsable_firma = $5
+      WHERE id_postulacion = $6
+    `, [
+      resultado.rows[0].fecha_firma_programada,
+      resultado.rows[0].hora_firma,
+      resultado.rows[0].lugar_firma,
+      resultado.rows[0].direccion_firma,
+      resultado.rows[0].responsable_firma,
+      idPostulacion
+    ]);
 
     // ========================================================
     // MENSAJE ESPECÍFICO DE FIRMA
     // NO ES EL MENSAJE DE LOS EXÁMENES
     // ========================================================
 
+
     const mensaje =
         `Hola ${candidato.nombre_completo || ''}. ` +
-        `Te informamos que tus exámenes fueron aprobados. ` +
-        `Tu proceso de contratación continúa y estás programado(a) ` +
-        `para la firma de tu contrato el día ${fecha}, ` +
+        `Te informamos que tu firma de contrato ha sido ${esReprogramacion ? 'reprogramada' : 'programada'}. ` +
+        `La cita está prevista para el día ${fecha}, ` +
         `a las ${hora}, en ${lugar}. ` +
         `${direccion ? `Dirección: ${direccion}. ` : ''}` +
         `Te esperamos.`;

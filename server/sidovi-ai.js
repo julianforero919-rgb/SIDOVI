@@ -433,38 +433,61 @@ async function hExamenes({ db, q, sede, tiempo, rol }) {
 async function hContratos({ db, q, sede, tiempo, rol }) {
   const params = [];
   let filtroSede = '';
-  if (sede) { params.push(sede.id); filtroSede = `AND v.id_sede = $${params.length}`; }
+  if (sede) {
+    params.push(sede.id);
+    filtroSede = `AND v.id_sede = $${params.length}`;
+  }
   const sufijoSede = sede ? ` en ${sede.nombre}` : '';
 
   const fila = (await db.query(
     `SELECT
-       (SELECT COUNT(*)::int FROM postulacion p JOIN vacante v ON v.id_vacante = p.id_vacante
+       (SELECT COUNT(*)::int
+          FROM postulacion p
+          JOIN vacante v ON v.id_vacante = p.id_vacante
          WHERE UPPER(TRIM(p.estado)) IN ('PENDIENTE_CONTRATO','FIRMA_CONTRATO_AGENDADA')
-           AND NOT EXISTS (SELECT 1 FROM contrato c WHERE c.id_postulacion = p.id_postulacion) ${filtroSede}) AS pendientes,
-       (SELECT COUNT(*)::int FROM contrato c JOIN postulacion p ON p.id_postulacion = c.id_postulacion
-         JOIN vacante v ON v.id_vacante = p.id_vacante WHERE 1 = 1 ${filtroSede}) AS registrados,
-       (SELECT COUNT(*)::int FROM contrato c JOIN postulacion p ON p.id_postulacion = c.id_postulacion
-         JOIN vacante v ON v.id_vacante = p.id_vacante
-         WHERE c.fecha_firma_programada >= ${HOY} ${filtroSede}) AS firmas`,
+           AND NOT EXISTS (
+             SELECT 1 FROM contrato c
+             WHERE c.id_postulacion = p.id_postulacion
+           ) ${filtroSede}) AS pendientes,
+
+       (SELECT COUNT(*)::int
+          FROM contrato c
+          JOIN postulacion p ON p.id_postulacion = c.id_postulacion
+          JOIN vacante v ON v.id_vacante = p.id_vacante
+         WHERE 1 = 1 ${filtroSede}) AS registrados,
+
+       (SELECT COUNT(*)::int
+          FROM postulacion p
+          JOIN vacante v ON v.id_vacante = p.id_vacante
+         WHERE p.fecha_firma_programada >= ${HOY} ${filtroSede}) AS firmas`,
     params
   )).rows[0];
 
   let texto;
+
   if (/firma|firmar|agendad|programad/.test(q) || tiempo) {
-    const r = rangoFuturo('c.fecha_firma_programada', tiempo);
+    const r = rangoFuturo('p.fecha_firma_programada', tiempo);
     const n = r
       ? (await db.query(
-          `SELECT COUNT(*)::int AS n FROM contrato c JOIN postulacion p ON p.id_postulacion = c.id_postulacion
-             JOIN vacante v ON v.id_vacante = p.id_vacante WHERE ${r} ${filtroSede}`, params)).rows[0].n
+          `SELECT COUNT(*)::int AS n
+             FROM postulacion p
+             JOIN vacante v ON v.id_vacante = p.id_vacante
+            WHERE ${r} ${filtroSede}`,
+          params
+        )).rows[0].n
       : fila.firmas;
+
     const cuando = tiempo ? ` ${TEXTO_TIEMPO[tiempo]}` : ' próximas';
+
     texto = n === 0
       ? `No hay firmas de contrato programadas${sufijoSede}${tiempo ? cuando : ''}.`
       : `Hay ${plural(n, 'firma de contrato programada', 'firmas de contrato programadas')}${sufijoSede}${cuando}.`;
+
   } else if (/pendiente|falta|por generar|por hacer/.test(q)) {
     texto = fila.pendientes === 0
       ? `No hay contratos pendientes por generar${sufijoSede}.`
-      : `Hay ${plural(fila.pendientes, 'candidato listo para contrato', 'candidatos listos para contrato')}${sufijoSede} que aún no tiene contrato generado.`;
+      : `Hay ${plural(fila.pendientes, 'candidato listo para contrato', 'candidatos listos para contrato')}${sufijoSede} que aún no tienen contrato generado.`
+
   } else {
     texto = `Contratos${sufijoSede}:\n• Pendientes por generar: ${fila.pendientes}\n• Contratos registrados: ${fila.registrados}\n• Firmas programadas próximas: ${fila.firmas}`;
   }
@@ -472,10 +495,93 @@ async function hContratos({ db, q, sede, tiempo, rol }) {
   return {
     respuesta: texto,
     enlaces: enlacesPara(rol, 'contratos'),
-    sugerencias: ['¿Qué firmas hay esta semana?', '¿Qué contratos están pendientes?', '¿Qué tengo pendiente?'],
+    sugerencias: [
+  '¿Qué firmas hay esta semana?',
+  '¿Qué contratos están pendientes?',
+  '¿Qué tengo pendiente?'
+],
   };
 }
 
+async function hPendientes({ db, rol, usuarioId }) {
+  const fila = (await db.query(
+    `SELECT
+       (SELECT COUNT(*)::int
+          FROM postulacion
+         WHERE UPPER(TRIM(estado)) = 'EN_REVISION') AS revision,
+
+       (SELECT COUNT(*)::int
+          FROM entrevista
+         WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
+           AND fecha_entrevista::date = ${HOY}) AS entrevistas_hoy,
+
+       (SELECT COUNT(*)::int
+          FROM entrevista
+         WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
+           AND fecha_entrevista >= ${AHORA}) AS entrevistas_proximas,
+
+       (SELECT COUNT(*)::int
+          FROM examen_programado
+         WHERE UPPER(TRIM(estado)) = 'EN_REVISION') AS examenes_verificar,
+
+       (SELECT COUNT(*)::int
+          FROM examen_programado
+         WHERE UPPER(TRIM(estado)) = 'PROGRAMADO'
+           AND fecha >= ${HOY}) AS examenes_proximos,
+
+       (SELECT COUNT(*)::int
+          FROM postulacion p
+         WHERE UPPER(TRIM(p.estado)) IN ('PENDIENTE_CONTRATO','FIRMA_CONTRATO_AGENDADA')
+           AND NOT EXISTS (
+             SELECT 1 FROM contrato c
+             WHERE c.id_postulacion = p.id_postulacion
+           )) AS contratos_pendientes,
+
+       (SELECT COUNT(*)::int
+          FROM entrevista
+         WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
+           AND fecha_entrevista >= ${AHORA}
+           AND id_gerente = $1) AS mis_entrevistas`,
+    [usuarioId || null]
+  )).rows[0];
+
+  const lineas = [];
+
+  if (rol === 'Gerente') {
+    lineas.push(`• Entrevistas hoy: ${fila.entrevistas_hoy}`);
+    lineas.push(`• Entrevistas programadas por delante: ${fila.entrevistas_proximas} (${fila.mis_entrevistas} asignadas a ti)`);
+    lineas.push(`• Candidatos listos para contrato: ${fila.contratos_pendientes}`);
+  } else {
+    lineas.push(`• Hojas de vida en revisión: ${fila.revision}`);
+    lineas.push(`• Exámenes por verificar: ${fila.examenes_verificar}`);
+    lineas.push(`• Exámenes programados próximos: ${fila.examenes_proximos}`);
+    lineas.push(`• Entrevistas hoy: ${fila.entrevistas_hoy}`);
+    lineas.push(`• Candidatos listos para contrato: ${fila.contratos_pendientes}`);
+  }
+
+const hayAlgo = rol === 'Gerente'
+  ? Number(fila.entrevistas_hoy) > 0 ||
+    Number(fila.entrevistas_proximas) > 0 ||
+    Number(fila.contratos_pendientes) > 0
+  : Number(fila.revision) > 0 ||
+    Number(fila.examenes_verificar) > 0 ||
+    Number(fila.examenes_proximos) > 0 ||
+    Number(fila.entrevistas_hoy) > 0 ||
+    Number(fila.contratos_pendientes) > 0;
+
+
+  return {
+    respuesta: hayAlgo
+      ? `Esto es lo que tienes en este momento:\n${lineas.join('\n')}`
+      : 'No tienes tareas pendientes en este momento. Felicitaciones.',
+    enlaces: rol === 'Gerente'
+      ? enlacesPara(rol, 'evaluar', 'contratos')
+      : enlacesPara(rol, 'hojas', 'examenes', 'contratos'),
+    sugerencias: rol === 'Gerente'
+      ? ['Qué entrevistas tengo hoy?', 'Qué contratos están pendientes?']
+      : ['Cuántas postulaciones están en revisión?', 'Qué exámenes hay por verificar?'],
+  };
+}
 async function hVacantes({ db, sede, rol }) {
   const filas = (await db.query(
     `SELECT COALESCE(s.nombre_sede, 'Sin sede') AS sede, COUNT(*)::int AS n
@@ -503,45 +609,6 @@ async function hSedes({ db, rol }) {
       '\n\nPuedes preguntarme por una sede, por ejemplo: «postulaciones en Tunja».'
     : 'No hay sedes activas registradas.';
   return { respuesta: texto, enlaces: enlacesPara(rol, 'cargos'), sugerencias: ['¿Cuántas vacantes hay abiertas?'] };
-}
-
-async function hPendientes({ db, rol, usuarioId }) {
-  const fila = (await db.query(
-    `SELECT
-       (SELECT COUNT(*)::int FROM postulacion WHERE UPPER(TRIM(estado)) = 'EN_REVISION') AS revision,
-       (SELECT COUNT(*)::int FROM entrevista WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
-          AND fecha_entrevista::date = ${HOY}) AS entrevistas_hoy,
-       (SELECT COUNT(*)::int FROM entrevista WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
-          AND fecha_entrevista >= ${AHORA}) AS entrevistas_proximas,
-       (SELECT COUNT(*)::int FROM examen_programado WHERE UPPER(TRIM(estado)) = 'EN_REVISION') AS examenes_verificar,
-       (SELECT COUNT(*)::int FROM examen_programado WHERE UPPER(TRIM(estado)) = 'PROGRAMADO' AND fecha >= ${HOY}) AS examenes_proximos,
-       (SELECT COUNT(*)::int FROM postulacion p WHERE UPPER(TRIM(p.estado)) IN ('PENDIENTE_CONTRATO','FIRMA_CONTRATO_AGENDADA')
-          AND NOT EXISTS (SELECT 1 FROM contrato c WHERE c.id_postulacion = p.id_postulacion)) AS contratos_pendientes,
-       (SELECT COUNT(*)::int FROM entrevista WHERE UPPER(TRIM(estado)) = 'PROGRAMADA'
-          AND fecha_entrevista >= ${AHORA} AND id_gerente = $1) AS mis_entrevistas`,
-    [usuarioId || null]
-  )).rows[0];
-
-  const lineas = [];
-  if (rol === 'Gerente') {
-    lineas.push(`• Entrevistas hoy: ${fila.entrevistas_hoy}`);
-    lineas.push(`• Entrevistas programadas por delante: ${fila.entrevistas_proximas} (${fila.mis_entrevistas} asignadas a ti)`);
-    lineas.push(`• Candidatos listos para contrato: ${fila.contratos_pendientes}`);
-  } else {
-    lineas.push(`• Hojas de vida en revisión: ${fila.revision}`);
-    lineas.push(`• Exámenes por verificar: ${fila.examenes_verificar}`);
-    lineas.push(`• Exámenes programados próximos: ${fila.examenes_proximos}`);
-    lineas.push(`• Entrevistas hoy: ${fila.entrevistas_hoy}`);
-    lineas.push(`• Candidatos listos para contrato: ${fila.contratos_pendientes}`);
-  }
-  const hayAlgo = Object.values(fila).some((v) => v > 0);
-  return {
-    respuesta: hayAlgo ? `Esto es lo que tienes en este momento:\n${lineas.join('\n')}` : 'No tienes tareas pendientes en este momento. 🎉',
-    enlaces: rol === 'Gerente' ? enlacesPara(rol, 'evaluar', 'contratos') : enlacesPara(rol, 'hojas', 'examenes', 'contratos'),
-    sugerencias: rol === 'Gerente'
-      ? ['¿Qué entrevistas tengo hoy?', '¿Qué contratos están pendientes?']
-      : ['¿Cuántas postulaciones están en revisión?', '¿Qué exámenes hay por verificar?'],
-  };
 }
 
 const PALABRAS_NO_NOMBRE = new Set([
