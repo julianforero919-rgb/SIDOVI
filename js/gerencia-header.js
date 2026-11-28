@@ -11,11 +11,11 @@
   sessionStorage.setItem('sidoviPanel', 'Gerente');
 
   const nav = document.querySelector('.site-header .nav-list');
-  if (nav) nav.innerHTML = '<li><a href="index.html" class="nav-link">Inicio Público</a></li><li><a href="login.html" class="nav-link nav-cta">Cerrar Sesión</a></li>';
+  if (nav) nav.innerHTML = '<li><a href="index.html" class="nav-link">Inicio público</a></li><li><a href="login.html" class="nav-link nav-cta">Cerrar sesión</a></li>';
 
   const sidebar = document.querySelector('aside.sidebar');
   if (!sidebar) return;
 
   sidebar.setAttribute('aria-label', 'Menú de gerencia');
-  sidebar.innerHTML = '<span class="sidebar-title">Gestión</span><a href="gerente.html" class="sidebar-link">Dashboard</a><a href="evaluar.html" class="sidebar-link">Evaluar Candidatos</a><a href="contrato.html" class="sidebar-link">Contratos</a><span class="sidebar-title">Información</span><a href="reporte.html" class="sidebar-link active" aria-current="page">Reportes</a><span class="sidebar-title">Cuenta</span><a href="mi-perfil.html" class="sidebar-link profile-sidebar-link">Mi perfil</a>';
+  sidebar.innerHTML = '<span class="sidebar-title">Gestión</span><a href="gerente.html" class="sidebar-link">Panel principal</a><a href="evaluar.html" class="sidebar-link">Evaluar candidatos</a><a href="contrato.html" class="sidebar-link">Contratos</a><span class="sidebar-title">Información</span><a href="reporte.html" class="sidebar-link active" aria-current="page">Reportes</a><span class="sidebar-title">Cuenta</span><a href="mi-perfil.html" class="sidebar-link profile-sidebar-link">Mi perfil</a>';
 })();
