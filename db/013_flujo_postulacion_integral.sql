@@ -42,6 +42,10 @@ WHERE c.id_postulacion = p.id_postulacion
   AND LOWER(TRIM(COALESCE(c.estado, ''))) NOT IN
       ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
 
+UPDATE contrato
+SET estado='Pendiente de firma'
+WHERE LOWER(TRIM(COALESCE(estado,''))) IN ('borrador','firma programada','pendiente de firma');
+
 ALTER TABLE postulacion
   ADD CONSTRAINT postulacion_estado_check
   CHECK (estado IN (
