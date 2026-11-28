@@ -38,6 +38,8 @@ const contratoDocumento = document.getElementById('contratoDocumento');
 const cerrarDocumento = document.getElementById('cerrarDocumento');
 const exportarPDF = document.getElementById('exportarPDF');
 const imprimirContrato = document.getElementById('imprimirContrato');
+const confirmarFirmaContrato = document.getElementById('confirmarFirmaContrato');
+const estadoFirmaContrato = document.getElementById('estadoFirmaContrato');
 
 
 // ============================================================
@@ -60,6 +62,7 @@ const datoEstado = document.getElementById('datoEstadoCandidato');
 let postulaciones = [];
 let contratos = [];
 let trabajadores = [];
+let contratoActualId = null;
 
 
 // ============================================================
@@ -1180,6 +1183,15 @@ function mostrarDocumento(
     contrato,
     candidato
 ) {
+
+    contratoActualId = Number(contrato.id_contrato) || null;
+    const firmado = String(contrato.estado || '').trim().toLowerCase() === 'firmado';
+    if (confirmarFirmaContrato) confirmarFirmaContrato.hidden = firmado || !contratoActualId;
+    if (estadoFirmaContrato) {
+        estadoFirmaContrato.textContent = firmado
+            ? 'Contrato firmado'
+            : 'Pendiente de firma';
+    }
 
     contratoDocumento.hidden =
         false;
@@ -2351,6 +2363,34 @@ imprimirContrato?.addEventListener(
     }
 );
 
+
+confirmarFirmaContrato?.addEventListener('click', async () => {
+    if (!contratoActualId) {
+        mostrarAlerta('No se ha seleccionado un contrato válido.');
+        return;
+    }
+    if (!confirm('Confirma que el contrato ya fue firmado por las partes y que deseas registrar la contratación.')) return;
+
+    confirmarFirmaContrato.disabled = true;
+    const textoOriginal = confirmarFirmaContrato.textContent;
+    confirmarFirmaContrato.textContent = 'Registrando firma...';
+    try {
+        const firmado = await api(`/api/contratos/${contratoActualId}/firmar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        if (estadoFirmaContrato) estadoFirmaContrato.textContent = 'Contrato firmado';
+        confirmarFirmaContrato.hidden = true;
+        mostrarAlerta('Firma registrada. La persona ahora figura como contratada.', 'success');
+        await Promise.all([cargarPostulaciones(), cargarContratos(), cargarTrabajadores()]);
+    } catch (error) {
+        mostrarAlerta(error.message);
+    } finally {
+        confirmarFirmaContrato.disabled = false;
+        confirmarFirmaContrato.textContent = textoOriginal;
+    }
+});
 
 // ============================================================
 // EXPORTAR PDF
