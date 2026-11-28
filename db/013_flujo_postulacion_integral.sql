@@ -1,0 +1,53 @@
+-- SIDOVI: datos completos del aspirante y estados controlados de selección/vinculación.
+-- Ejecutar una sola vez en la base PostgreSQL de Render ANTES de desplegar el backend actualizado.
+BEGIN;
+
+ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS ciudad varchar(100) NOT NULL DEFAULT '';
+ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS fecha_nacimiento date;
+ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS experiencia varchar(20) NOT NULL DEFAULT '';
+ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS descripcion_experiencia text NOT NULL DEFAULT '';
+ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS autorizacion_datos boolean NOT NULL DEFAULT false;
+ALTER TABLE aspirante ADD COLUMN IF NOT EXISTS autorizacion_datos_fecha timestamp;
+
+ALTER TABLE contrato ADD COLUMN IF NOT EXISTS fecha_firma_real timestamp;
+ALTER TABLE contrato ADD COLUMN IF NOT EXISTS firmado_por integer REFERENCES usuario(id_usuario) ON DELETE SET NULL;
+
+-- Un contrato generado no equivale a una contratación confirmada.
+-- Los registros históricos que quedaron como CONTRATADO con contrato en borrador
+-- pasan a CONTRATO_GENERADO para que puedan verificarse y firmarse correctamente.
+UPDATE postulacion p
+SET estado = 'CONTRATO_GENERADO'
+FROM contrato c
+WHERE c.id_postulacion = p.id_postulacion
+  AND p.estado = 'CONTRATADO'
+  AND LOWER(TRIM(COALESCE(c.estado, ''))) NOT IN
+      ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
+
+ALTER TABLE postulacion DROP CONSTRAINT IF EXISTS postulacion_estado_check;
+ALTER TABLE postulacion
+  ADD CONSTRAINT postulacion_estado_check
+  CHECK (estado IN (
+    'EN_REVISION',
+    'APROBADO_RRHH',
+    'RECHAZADO_RRHH',
+    'ENTREVISTA',
+    'APROBADO',
+    'RECHAZADO',
+    'CONTRATADO',
+    'EXAMENES_PENDIENTES',
+    'EXAMENES_AGENDADOS',
+    'EXAMENES_EN_REVISION',
+    'PENDIENTE_CONTRATO',
+    'FIRMA_CONTRATO_AGENDADA',
+    'CONTRATO_GENERADO',
+    -- Compatibilidad con valores históricos de versiones anteriores.
+    'HOJA_VIDA_APROBADA',
+    'ENTREVISTA_PENDIENTE',
+    'ENTREVISTA_AGENDADA',
+    'EXAMENES_PROGRAMADOS'
+  ));
+
+CREATE INDEX IF NOT EXISTS idx_postulacion_estado_flujo
+  ON postulacion(estado);
+
+COMMIT;
