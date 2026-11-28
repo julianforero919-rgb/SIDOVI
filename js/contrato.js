@@ -357,6 +357,13 @@ document.addEventListener(
 
 function resetForm() {
 
+    contratoActualId = null;
+    if (confirmarFirmaContrato) {
+        confirmarFirmaContrato.hidden = true;
+        confirmarFirmaContrato.disabled = false;
+    }
+    if (estadoFirmaContrato) estadoFirmaContrato.textContent = '';
+
     form?.reset();
 
     contratoId.value = '';
@@ -1302,7 +1309,7 @@ form?.addEventListener(
                 ),
 
             estado:
-                'Borrador',
+                'Pendiente de firma',
 
             observaciones:
                 observaciones.value.trim()
@@ -2023,7 +2030,8 @@ function pintarTrabajadores() {
 
             if (
                 estado === 'ACTIVO' ||
-                estado === 'CONTRATADO'
+                estado === 'CONTRATADO' ||
+                estado === 'FIRMADO'
             ) {
 
                 claseEstado =
@@ -2249,10 +2257,10 @@ async function verContrato(id) {
 
 
         if (programarFirma) {
-
             programarFirma.hidden =
-                true;
-
+                String(contrato.estado || '').trim().toLowerCase() === 'firmado';
+            programarFirma.disabled = false;
+            programarFirma.textContent = 'Reprogramar firma';
         }
 
 
