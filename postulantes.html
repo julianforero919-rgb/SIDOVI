@@ -14,9 +14,9 @@
       <div class="brand"><img src="img/logo_sidovi.png" alt="Logo SIDOVI" class="brand-logo" /></div>
       <nav aria-label="Navegación principal">
         <ul class="nav-list">
-          <li><a href="index.html" class="nav-link">Inicio Público</a></li>
-          <li><a href="RRHH.html" class="nav-link">Panel RRHH</a></li>
-          <li><a href="login.html" class="nav-link nav-cta">Cerrar Sesión</a></li>
+          <li><a href="index.html" class="nav-link">Inicio público</a></li>
+          <li><a href="RRHH.html" class="nav-link">Panel de RR. HH.</a></li>
+          <li><a href="login.html" class="nav-link nav-cta">Cerrar sesión</a></li>
         </ul>
       </nav>
       <button class="menu-toggle" aria-label="Abrir menú" id="menuToggle">&#9776;</button>
@@ -27,7 +27,7 @@
     <!-- Enlaces a las herramientas del panel de Recursos Humanos. -->
     <aside class="sidebar" aria-label="Menú del panel">
       <span class="sidebar-title">Gestión</span>
-      <a href="RRHH.html" class="sidebar-link">Dashboard</a>
+      <a href="RRHH.html" class="sidebar-link">Panel principal</a>
       <a href="postulantes.html" class="sidebar-link active" aria-current="page">Postulantes</a>
       <a href="mi-perfil.html" class="sidebar-link profile-sidebar-link">Mi perfil</a>
       <a href="hojasdevida.html" class="sidebar-link">Hojas de Vida</a>
@@ -41,7 +41,7 @@
     <!-- Consulta, filtrado y administración de postulantes. -->
     <main class="panel-content" aria-labelledby="post-title">
       <div class="panel-header">
-        <h1 id="post-title">Gestión de Postulantes</h1>
+        <h1 id="post-title">Gestión de postulantes</h1>
         <p>Consulta, filtra y gestiona todos los candidatos registrados en el sistema.</p>
       </div>
 
@@ -63,24 +63,24 @@
         </select>
         <select id="filtroCargo" aria-label="Filtrar por cargo">
           <option value="">Todos los cargos</option>
-          <option value="Guarda">Guarda de Seguridad</option>
+          <option value="Guarda">Guarda de seguridad</option>
           <option value="Supervisor">Supervisor</option>
-          <option value="RRHH">Auxiliar RRHH</option>
+          <option value="RRHH">Auxiliar de RR. HH.</option>
           <option value="CCTV">Técnico CCTV</option>
         </select>
       </div>
 
       <!-- Tabla de postulaciones y acciones disponibles para cada persona. -->
       <div class="data-table-wrap">
-        <h2 id="tituloLista">Lista de Postulantes</h2>
+        <h2 id="tituloLista">Lista de postulantes</h2>
         <table id="tablaPostulantes">
           <thead>
             <tr>
               <th scope="col">Nombre</th>
               <th scope="col">Cédula</th>
               <th scope="col">Género</th>
-              <th scope="col">Cargo Aspirado</th>
-              <th scope="col">Fecha Postulación</th>
+              <th scope="col">Cargo al que se postula</th>
+              <th scope="col">Fecha de postulación</th>
               <th scope="col">Estado</th>
               <th scope="col">Acciones</th>
             </tr>

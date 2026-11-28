@@ -110,7 +110,7 @@ function renderEventList() {
     if (title) {
         title.textContent = diaSeleccionado
             ? `Entrevistas del ${formatFecha(diaSeleccionado)}`
-            : 'Próximas Entrevistas';
+            : 'Próximas entrevistas';
     }
 
     if (btnTodas) btnTodas.hidden = !diaSeleccionado;
