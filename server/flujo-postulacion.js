@@ -35,7 +35,7 @@ function puedeProgramarEntrevista(estado) {
 }
 
 function puedeProgramarExamen(estado) {
-  return estado === 'EXAMENES_PENDIENTES' || estado === 'APROBADO';
+  return estado === 'EXAMENES_PENDIENTES';
 }
 
 function puedeProgramarFirma(estado) {
