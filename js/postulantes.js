@@ -43,7 +43,7 @@ function render() {
   const query = search.value.trim().toLowerCase();
   const state = statusFilter.value.toLowerCase();
   const rows = postulaciones.filter((p) => `${p.nombre_completo} ${p.numero_documento} ${p.cargo} ${p.estado}`.toLowerCase().includes(query) && (!state || p.estado.toLowerCase().includes(state)));
-  title.textContent = `Lista de Postulantes (${rows.length})`;
+  title.textContent = `Lista de postulantes (${rows.length})`;
   body.innerHTML = rows.length ? rows.map((p) => `<tr class="postulante-row"><td>${escapeHtml(p.nombre_completo)}</td><td>${escapeHtml(p.numero_documento)}</td><td>${escapeHtml(p.cargo)}</td><td>${escapeHtml(p.numero_documento)}</td><td>${escapeHtml(p.sexo || 'No especificado')}</td><td>${escapeHtml(p.cargo)}</td><td>${new Date(p.fecha_postulacion).toLocaleDateString('es-CO')}</td><td><span class="badge ${badgeClass(p.estado)}">${escapeHtml(nombreEstado(p.estado))}</span></td><td style="display:flex;gap:.4rem;flex-wrap:wrap">${accionesProceso(p)}</td></tr>`).join('') : '<tr><td colspan="7">No hay postulaciones para mostrar.</td></tr>';
 }
 async function loadPostulaciones() { try { const response = await fetch('/api/postulaciones'); if (!response.ok) throw new Error(); postulaciones = await response.json(); render(); } catch { body.innerHTML = '<tr><td colspan="7">No fue posible cargar los datos de PostgreSQL.</td></tr>'; } }
