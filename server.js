@@ -60,7 +60,7 @@ const postgresConfig = hasExplicitDbConfig
 const db = new Pool(postgresConfig);
 
 app.use(cors());
-app.use(express.json({ limit: '18mb' }));
+app.use(express.json({ limit: '24mb' }));
 app.use(express.urlencoded({ extended: true }));
 function getSession(req) {
   const authorization = req.get('authorization') || '';
@@ -354,6 +354,26 @@ function normalizarGenero(valor) {
   if (['F', 'FEMENINO', 'MUJER'].includes(v)) return 'Mujer';
   if (['O', 'OTRO', 'OTRA', 'OTRX'].includes(v)) return 'Otro';
   return null;
+}
+
+function esFechaValida(value) {
+  const fecha = String(value || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
+  const parsed = new Date(fecha + 'T00:00:00.000Z');
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === fecha;
+}
+
+function esHoraValida(value) {
+  const hora = String(value || '');
+  if (!/^\d{2}:\d{2}$/.test(hora)) return false;
+  const [hh, mm] = hora.split(':').map(Number);
+  return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+}
+
+function tamanoArchivoBytes(value) {
+  const contenido = String(value || '');
+  const base64 = contenido.match(/^data:[^;]+;base64,(.*)$/s);
+  return base64 ? Buffer.from(base64[1], 'base64').length : Buffer.byteLength(contenido);
 }
 
 const postulacionQuery = `
@@ -659,7 +679,7 @@ app.post('/api/postulaciones', async (req, res) => {
       !fechaNacimiento || !sexo || !body.idVacante || !['0','1','2','3'].includes(experiencia)) {
     return res.status(400).json({ error: 'Completa todos los datos personales y laborales obligatorios.' });
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaNacimiento))) {
+  if (!esFechaValida(fechaNacimiento)) {
     return res.status(400).json({ error: 'La fecha de nacimiento no tiene un formato válido.' });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoFinal)) {
@@ -746,7 +766,7 @@ app.post('/api/postulaciones', async (req, res) => {
 
     for (const doc of documentos) {
       const archivo = String(doc.archivo || doc.rutaArchivo || '');
-      if (!archivo || archivo.length > 8 * 1024 * 1024) {
+      if (!archivo || tamanoArchivoBytes(archivo) > 8 * 1024 * 1024) {
         throw Object.assign(new Error('Uno de los documentos está vacío o supera el límite permitido de 8 MB.'), { status: 413 });
       }
       await client.query(
@@ -1014,8 +1034,8 @@ app.post('/api/entrevistas', requireRoles('RRHH', 'Gerente'), async (req, res) =
   const postId = Number(idPostulacion);
   const fechaFinal = fecha || fechaEntrevista;
   if (!Number.isInteger(postId) || postId <= 0) return res.status(400).json({ error: 'Selecciona una postulación válida.' });
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaFinal || ''))) return res.status(400).json({ error: 'La fecha de la entrevista no es válida.' });
-  if (!/^\d{2}:\d{2}$/.test(String(hora || ''))) return res.status(400).json({ error: 'La hora debe tener el formato HH:MM.' });
+  if (!esFechaValida(fechaFinal)) return res.status(400).json({ error: 'La fecha de la entrevista no es válida.' });
+  if (!esHoraValida(hora)) return res.status(400).json({ error: 'La hora debe tener el formato HH:MM válido.' });
 
   const client = await db.connect();
   try {
@@ -1192,13 +1212,13 @@ app.patch('/api/entrevistas/:id', requireRoles('RRHH', 'Gerente'), async (req, r
       });
     }
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaNueva))) {
+    if (!esFechaValida(fechaNueva)) {
       return res.status(400).json({
         error: 'La fecha debe tener el formato AAAA-MM-DD.'
       });
     }
 
-    if (!/^\d{2}:\d{2}$/.test(String(horaNueva))) {
+    if (!esHoraValida(horaNueva)) {
       return res.status(400).json({
         error: 'La hora debe tener el formato HH:MM.'
       });
@@ -1379,13 +1399,13 @@ app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
     salario = 1423500, observaciones = '' } = req.body || {};
   const postId = Number(idPostulacion);
   const salary = Number(salario);
-  if (!Number.isInteger(postId) || postId <= 0 || !fechaInicio) {
+  if (!Number.isInteger(postId) || postId <= 0 || !esFechaValida(fechaInicio)) {
     return res.status(400).json({ error: 'La postulación y la fecha de inicio son obligatorias.' });
   }
   if (!Number.isFinite(salary) || salary <= 0) {
     return res.status(400).json({ error: 'El salario debe ser un valor mayor que cero.' });
   }
-  if (fechaFin && String(fechaFin) < String(fechaInicio)) {
+  if (fechaFin && (!esFechaValida(fechaFin) || String(fechaFin) < String(fechaInicio))) {
     return res.status(400).json({ error: 'La fecha de finalización no puede ser anterior a la fecha de inicio.' });
   }
 
@@ -1495,6 +1515,9 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
     return res.status(400).json({
       error: 'Postulación, fecha, hora y lugar son obligatorios.'
     });
+  }
+  if (!esFechaValida(fecha) || !esHoraValida(hora)) {
+    return res.status(400).json({ error: 'La fecha u hora de firma no son válidas.' });
   }
 
   try {
@@ -5591,8 +5614,8 @@ app.post('/api/examenes', requireRoles('RRHH'), async (req, res) => {
   if (!Array.isArray(tipos) || !tipos.length || tipos.some(tipo => !String(tipo).trim())) {
     return res.status(400).json({ error: 'Selecciona al menos un tipo de examen.' });
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha || ''))) return res.status(400).json({ error: 'La fecha del examen no es válida.' });
-  if (!/^\d{2}:\d{2}$/.test(String(hora || ''))) return res.status(400).json({ error: 'La hora debe tener el formato HH:MM.' });
+  if (!esFechaValida(fecha)) return res.status(400).json({ error: 'La fecha del examen no es válida.' });
+  if (!esHoraValida(hora)) return res.status(400).json({ error: 'La hora debe tener el formato HH:MM válido.' });
   if (!String(lugar || '').trim()) return res.status(400).json({ error: 'El lugar de los exámenes es obligatorio.' });
 
   const client = await db.connect();
@@ -5642,7 +5665,7 @@ app.post('/api/examenes', requireRoles('RRHH'), async (req, res) => {
 app.post('/api/examenes/:id/documentos', requireRoles('RRHH'), async (req, res) => {
   const { nombreDocumento, tipoDocumento = 'PDF', archivo, recibidoEn, observaciones = '' } = req.body || {};
   if (!String(nombreDocumento || '').trim() || !archivo) return res.status(400).json({ error: 'Nombre y archivo son obligatorios.' });
-  if (String(archivo).length > 8 * 1024 * 1024) return res.status(413).json({ error: 'El archivo supera 8 MB.' });
+  if (tamanoArchivoBytes(archivo) > 8 * 1024 * 1024) return res.status(413).json({ error: 'El archivo supera 8 MB.' });
   if (recibidoEn && !/^\d{4}-\d{2}-\d{2}$/.test(String(recibidoEn))) return res.status(400).json({ error: 'La fecha de recepción no es válida.' });
 
   const client = await db.connect();
