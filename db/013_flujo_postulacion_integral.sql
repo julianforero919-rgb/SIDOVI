@@ -23,14 +23,22 @@ WHERE estado='ENTREVISTA_AGENDADA';
 UPDATE postulacion SET estado='EXAMENES_AGENDADOS'
 WHERE estado='EXAMENES_PROGRAMADOS';
 
--- Un contrato generado no equivale a una contratación confirmada.
--- Los registros históricos que quedaron como CONTRATADO con contrato en borrador
--- pasan a CONTRATO_GENERADO para que puedan verificarse y firmarse correctamente.
+-- Reconocer como contratados los contratos que ya constan firmados/activos.
+UPDATE postulacion p
+SET estado = 'CONTRATADO',
+    fecha_contratacion = COALESCE(p.fecha_contratacion, CURRENT_DATE)
+FROM contrato c
+WHERE c.id_postulacion = p.id_postulacion
+  AND p.estado IN ('PENDIENTE_CONTRATO','FIRMA_CONTRATO_AGENDADA','CONTRATO_GENERADO','CONTRATADO')
+  AND LOWER(TRIM(COALESCE(c.estado, ''))) IN
+      ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
+
+-- Un contrato existente que aún no está firmado queda pendiente de confirmación.
 UPDATE postulacion p
 SET estado = 'CONTRATO_GENERADO'
 FROM contrato c
 WHERE c.id_postulacion = p.id_postulacion
-  AND p.estado = 'CONTRATADO'
+  AND p.estado IN ('PENDIENTE_CONTRATO','FIRMA_CONTRATO_AGENDADA','CONTRATO_GENERADO','CONTRATADO')
   AND LOWER(TRIM(COALESCE(c.estado, ''))) NOT IN
       ('firmado', 'firmado manualmente', 'firmado digitalmente', 'activo', 'contratado');
 
