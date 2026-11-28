@@ -1339,121 +1339,108 @@ app.get('/api/contratos/:id', requireRoles('RRHH', 'Gerente'), async (req, res) 
 
 
 app.post('/api/contratos', requireRoles('Gerente'), async (req, res) => {
-  const {
-    idPostulacion,
-    fechaInicio,
-    fechaFin = null,
-    tipoContrato = 'Término Fijo',
-    salario = 1423500,
-    estado = 'Borrador',
-    observaciones = ''
-  } = req.body;
-
-  if (!idPostulacion || !fechaInicio) {
-    return res.status(400).json({
-      error: 'La postulación y la fecha de inicio son obligatorias.'
-    });
+  const { idPostulacion, fechaInicio, fechaFin = null, tipoContrato = 'Término Fijo',
+    salario = 1423500, observaciones = '' } = req.body || {};
+  const postId = Number(idPostulacion);
+  const salary = Number(salario);
+  if (!Number.isInteger(postId) || postId <= 0 || !fechaInicio) {
+    return res.status(400).json({ error: 'La postulación y la fecha de inicio son obligatorias.' });
+  }
+  if (!Number.isFinite(salary) || salary <= 0) {
+    return res.status(400).json({ error: 'El salario debe ser un valor mayor que cero.' });
+  }
+  if (fechaFin && String(fechaFin) < String(fechaInicio)) {
+    return res.status(400).json({ error: 'La fecha de finalización no puede ser anterior a la fecha de inicio.' });
   }
 
+  const client = await db.connect();
   try {
-    // Verificar que la persona esté lista para contratación.
-    const post = await db.query(`
-      SELECT
-        p.id_postulacion,
-        p.estado,
-        p.fecha_firma_programada,
-        p.hora_firma,
-        p.lugar_firma,
-        p.direccion_firma,
-        p.responsable_firma,
-        a.nombre_completo,
-        a.numero_documento,
-        a.correo,
-        a.telefono,
-        a.direccion,
-        v.nombre_cargo AS cargo,
-        s.nombre_sede
-      FROM postulacion p
-      JOIN aspirante a
-        ON a.id_aspirante = p.id_aspirante
-      JOIN vacante v
-        ON v.id_vacante = p.id_vacante
-      LEFT JOIN sede s
-        ON s.id_sede = v.id_sede
-      WHERE p.id_postulacion = $1
-        AND p.estado IN (
-          'PENDIENTE_CONTRATO',
-          'FIRMA_CONTRATO_AGENDADA'
-        )
-    `, [idPostulacion]);
-
-    if (!post.rowCount) {
-      return res.status(400).json({
-        error: 'La persona todavía no está habilitada para generar el contrato.'
-      });
-    }
-
-    // Evitar contratos duplicados.
-    const existente = await db.query(
-        'SELECT id_contrato FROM contrato WHERE id_postulacion = $1',
-        [idPostulacion]
+    await client.query('BEGIN');
+    const post = await client.query(
+      `SELECT p.id_postulacion,p.estado,p.fecha_firma_programada,p.hora_firma,
+              p.lugar_firma,p.direccion_firma,p.responsable_firma,
+              a.nombre_completo,a.numero_documento,a.correo,a.telefono,a.direccion,
+              v.nombre_cargo AS cargo,s.nombre_sede
+       FROM postulacion p
+       JOIN aspirante a ON a.id_aspirante=p.id_aspirante
+       JOIN vacante v ON v.id_vacante=p.id_vacante
+       LEFT JOIN sede s ON s.id_sede=v.id_sede
+       WHERE p.id_postulacion=$1 FOR UPDATE OF p`,
+      [postId]
     );
-
-    if (existente.rowCount) {
-      return res.status(409).json({
-        error: 'Esta postulación ya tiene un contrato generado.',
-        idContrato: existente.rows[0].id_contrato
-      });
+    if (!post.rowCount) throw Object.assign(new Error('Postulación no encontrada.'), { status: 404 });
+    if (post.rows[0].estado !== 'FIRMA_CONTRATO_AGENDADA') {
+      throw Object.assign(new Error('Primero debes programar la firma del contrato.'), { status: 409 });
     }
+    const existing = await client.query('SELECT id_contrato FROM contrato WHERE id_postulacion=$1', [postId]);
+    if (existing.rowCount) throw Object.assign(new Error('Esta postulación ya tiene un contrato generado.'), { status: 409 });
 
-    // Crear el contrato conservando la agenda de firma.
-    const result = await db.query(`
-      INSERT INTO contrato (
-        id_postulacion,
-        fecha_inicio,
-        fecha_fin,
-        tipo_contrato,
-        salario,
-        estado,
-        observaciones,
-        fecha_firma_programada,
-        hora_firma,
-        lugar_firma,
-        direccion_firma,
-        responsable_firma
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING *
-    `, [
-      idPostulacion,
-      fechaInicio,
-      fechaFin,
-      tipoContrato,
-      salario,
-      estado,
-      observaciones,
-      post.rows[0].fecha_firma_programada,
-      post.rows[0].hora_firma,
-      post.rows[0].lugar_firma,
-      post.rows[0].direccion_firma,
-      post.rows[0].responsable_firma
-    ]);
-
-    // Actualizar el estado de la postulación.
-    await db.query(
-        `UPDATE postulacion
-       SET estado = 'CONTRATADO'
-       WHERE id_postulacion = $1`,
-        [idPostulacion]
+    const created = await client.query(
+      `INSERT INTO contrato
+       (id_postulacion,fecha_inicio,fecha_fin,tipo_contrato,salario,estado,observaciones,
+        fecha_firma_programada,hora_firma,lugar_firma,direccion_firma,responsable_firma)
+       VALUES ($1,$2,$3,$4,$5,'Pendiente de firma',$6,$7,$8,$9,$10,$11)
+       RETURNING *`,
+      [postId,fechaInicio,fechaFin,tipoContrato,salary,String(observaciones).trim(),
+        post.rows[0].fecha_firma_programada,post.rows[0].hora_firma,post.rows[0].lugar_firma,
+        post.rows[0].direccion_firma,post.rows[0].responsable_firma]
     );
-
-    return res.status(201).json({
-      ...result.rows[0],
-      candidato: post.rows[0]
-    });
-
+    await client.query("UPDATE postulacion SET estado='CONTRATO_GENERADO' WHERE id_postulacion=$1", [postId]);
+    await client.query(
+      `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+       VALUES ($1,'FIRMA_CONTRATO_AGENDADA','CONTRATO_GENERADO','Contrato generado y pendiente de firma.',$2)`,
+      [postId,req.session.id_usuario]
+    );
+    await client.query('COMMIT');
+    res.status(201).json({ ...created.rows[0], candidato: post.rows[0] });
   } catch (error) {
-    errorResponse(res, error, 'No fue posible crear el contrato.');
+    await client.query('ROLLBACK');
+    errorResponse(res,error,'No fue posible crear el contrato.');
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/api/contratos/:id/firmar', requireRoles('Gerente'), async (req, res) => {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `SELECT c.id_contrato,c.id_postulacion,c.estado AS estado_contrato,p.estado AS estado_postulacion
+       FROM contrato c JOIN postulacion p ON p.id_postulacion=c.id_postulacion
+       WHERE c.id_contrato=$1 FOR UPDATE OF c,p`,
+      [req.params.id]
+    );
+    if (!result.rowCount) throw Object.assign(new Error('Contrato no encontrado.'), { status: 404 });
+    const item = result.rows[0];
+    if (item.estado_contrato === 'Firmado' || item.estado_postulacion === 'CONTRATADO') {
+      throw Object.assign(new Error('Este contrato ya está registrado como firmado.'), { status: 409 });
+    }
+    if (item.estado_postulacion !== 'CONTRATO_GENERADO') {
+      throw Object.assign(new Error('La postulación no está en la etapa de contrato generado.'), { status: 409 });
+    }
+    const signed = await client.query(
+      `UPDATE contrato SET estado='Firmado',fecha_firma_real=CURRENT_TIMESTAMP,firmado_por=$1
+       WHERE id_contrato=$2 RETURNING *`,
+      [req.session.id_usuario,req.params.id]
+    );
+    await client.query(
+      `UPDATE postulacion SET estado='CONTRATADO',fecha_contratacion=CURRENT_DATE
+       WHERE id_postulacion=$1`,
+      [item.id_postulacion]
+    );
+    await client.query(
+      `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+       VALUES ($1,'CONTRATO_GENERADO','CONTRATADO','Firma del contrato confirmada por Gerencia.',$2)`,
+      [item.id_postulacion,req.session.id_usuario]
+    );
+    await client.query('COMMIT');
+    res.json({ ...signed.rows[0], estado_postulacion: 'CONTRATADO' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res,error,'No fue posible confirmar la firma del contrato.');
+  } finally {
+    client.release();
   }
 });
 
@@ -1688,17 +1675,58 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
 
 
 app.patch('/api/contratos/:id', requireRoles('Gerente'), async (req, res) => {
-  const { fechaInicio, fechaFin, tipoContrato, salario, estado, observaciones } = req.body;
+  const { fechaInicio, fechaFin, tipoContrato, salario, observaciones } = req.body || {};
   try {
-    const result = await db.query('UPDATE contrato SET fecha_inicio=COALESCE($1,fecha_inicio), fecha_fin=COALESCE($2,fecha_fin), tipo_contrato=COALESCE($3,tipo_contrato), salario=COALESCE($4,salario), estado=COALESCE($5,estado), observaciones=COALESCE($6,observaciones) WHERE id_contrato=$7 RETURNING *', [fechaInicio, fechaFin, tipoContrato, salario, estado, observaciones, req.params.id]);
-    if (!result.rowCount) return res.status(404).json({ error: 'Contrato no encontrado.' });
+    const current = await db.query('SELECT estado FROM contrato WHERE id_contrato=$1', [req.params.id]);
+    if (!current.rowCount) return res.status(404).json({ error: 'Contrato no encontrado.' });
+    if (current.rows[0].estado === 'Firmado') return res.status(409).json({ error: 'Un contrato firmado no se puede modificar desde este módulo.' });
+    const result = await db.query(
+      `UPDATE contrato SET
+       fecha_inicio=COALESCE($1,fecha_inicio),
+       fecha_fin=COALESCE($2,fecha_fin),
+       tipo_contrato=COALESCE($3,tipo_contrato),
+       salario=COALESCE($4,salario),
+       observaciones=COALESCE($5,observaciones)
+       WHERE id_contrato=$6 RETURNING *`,
+      [fechaInicio,fechaFin,tipoContrato,salario,observaciones,req.params.id]
+    );
     res.json(result.rows[0]);
-  } catch (error) { errorResponse(res, error, 'No fue posible actualizar el contrato.'); }
+  } catch (error) {
+    errorResponse(res,error,'No fue posible actualizar el contrato.');
+  }
 });
 
 app.delete('/api/contratos/:id', requireRoles('Gerente'), async (req, res) => {
-  try { const result = await db.query('DELETE FROM contrato WHERE id_contrato=$1 RETURNING id_contrato', [req.params.id]); if (!result.rowCount) return res.status(404).json({ error: 'Contrato no encontrado.' }); res.status(204).end(); }
-  catch (error) { errorResponse(res, error, 'No fue posible eliminar el contrato.'); }
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const current = await client.query(
+      'SELECT id_postulacion,estado FROM contrato WHERE id_contrato=$1 FOR UPDATE',
+      [req.params.id]
+    );
+    if (!current.rowCount) throw Object.assign(new Error('Contrato no encontrado.'), { status: 404 });
+    if (current.rows[0].estado === 'Firmado') throw Object.assign(new Error('No se puede eliminar un contrato firmado.'), { status: 409 });
+    await client.query('DELETE FROM contrato WHERE id_contrato=$1', [req.params.id]);
+    const post = await client.query(
+      `UPDATE postulacion SET estado='FIRMA_CONTRATO_AGENDADA'
+       WHERE id_postulacion=$1 AND estado='CONTRATO_GENERADO' RETURNING id_postulacion`,
+      [current.rows[0].id_postulacion]
+    );
+    if (post.rowCount) {
+      await client.query(
+        `INSERT INTO historial_proceso (id_postulacion,estado_anterior,estado_nuevo,detalle,usuario_id)
+         VALUES ($1,'CONTRATO_GENERADO','FIRMA_CONTRATO_AGENDADA','Borrador de contrato eliminado; vuelve a estar disponible para generar.',$2)`,
+        [current.rows[0].id_postulacion,req.session.id_usuario]
+      );
+    }
+    await client.query('COMMIT');
+    res.status(204).end();
+  } catch (error) {
+    await client.query('ROLLBACK');
+    errorResponse(res,error,'No fue posible eliminar el contrato.');
+  } finally {
+    client.release();
+  }
 });
 
 app.get('/api/trabajadores', requireRoles('RRHH', 'Gerente'), async (_req, res) => {
