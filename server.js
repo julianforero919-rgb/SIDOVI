@@ -931,6 +931,7 @@ app.delete('/api/postulaciones/:id', requireRoles('RRHH'), async (req, res) => {
       [req.params.id]
     );
     await client.query('DELETE FROM entrevista WHERE id_postulacion=$1', [req.params.id]);
+    await client.query('DELETE FROM aspirantes_seleccionados WHERE id_postulacion=$1', [req.params.id]);
     await client.query('DELETE FROM evidencia WHERE id_postulacion=$1', [req.params.id]);
     await client.query('DELETE FROM postulacion WHERE id_postulacion=$1', [req.params.id]);
 
