@@ -1494,7 +1494,8 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
   WHERE p.id_postulacion = $1
     AND p.estado IN (
       'PENDIENTE_CONTRATO',
-      'FIRMA_CONTRATO_AGENDADA'
+      'FIRMA_CONTRATO_AGENDADA',
+      'CONTRATO_GENERADO'
     )
 `, [idPostulacion]);
 
@@ -1525,7 +1526,8 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
 
     const puedeProgramar =
         estadoActual === 'PENDIENTE_CONTRATO' ||
-        estadoActual === 'FIRMA_CONTRATO_AGENDADA';
+        estadoActual === 'FIRMA_CONTRATO_AGENDADA' ||
+        estadoActual === 'CONTRATO_GENERADO';
 
     if (!puedeProgramar) {
 
@@ -1543,7 +1545,9 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
     // ========================================================
 
     const esReprogramacion =
-        estadoActual === 'FIRMA_CONTRATO_AGENDADA';
+        estadoActual === 'FIRMA_CONTRATO_AGENDADA' ||
+        estadoActual === 'CONTRATO_GENERADO';
+    const contratoYaGenerado = estadoActual === 'CONTRATO_GENERADO';
 
 
     // ========================================================
@@ -1560,7 +1564,7 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
         direccion_firma = $4,
         responsable_firma = $5,
         observaciones_firma = $6,
-        estado = 'FIRMA_CONTRATO_AGENDADA'
+        estado = CASE WHEN $8 THEN 'CONTRATO_GENERADO' ELSE 'FIRMA_CONTRATO_AGENDADA' END
 
       WHERE id_postulacion = $7
 
@@ -1572,7 +1576,8 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
       direccion,
       req.session.id_usuario,
       String(observaciones).trim(),
-      idPostulacion
+      idPostulacion,
+      contratoYaGenerado
     ]);
 
     // ========================================================
@@ -1641,7 +1646,7 @@ app.post('/api/contratos/agenda-firma', requireRoles('RRHH', 'Gerente'), async (
       ...resultado.rows[0],
 
       estado_postulacion:
-          'FIRMA_CONTRATO_AGENDADA',
+          contratoYaGenerado ? 'CONTRATO_GENERADO' : 'FIRMA_CONTRATO_AGENDADA',
 
       tipo_operacion:
           esReprogramacion
